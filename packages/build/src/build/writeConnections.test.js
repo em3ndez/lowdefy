@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -14,8 +14,10 @@
   limitations under the License.
 */
 
-import writeConnections from './writeConnections';
-import testContext from '../test/testContext';
+import { jest } from '@jest/globals';
+
+import writeConnections from './writeConnections.js';
+import testContext from '../test/testContext.js';
 
 const mockWriteBuildArtifact = jest.fn();
 
@@ -40,16 +42,8 @@ test('writeConnections write connection', async () => {
   await writeConnections({ components, context });
   expect(mockWriteBuildArtifact.mock.calls).toEqual([
     [
-      {
-        filePath: 'connections/connection1.json',
-        content: `{
-  "id": "connection:connection1",
-  "connectionId": "connection1",
-  "properties": {
-    "prop": "val"
-  }
-}`,
-      },
+      'connections/connection1.json',
+      '{"id":"connection:connection1","connectionId":"connection1","properties":{"prop":"val"}}',
     ],
   ]);
 });
@@ -70,22 +64,12 @@ test('writeConnections multiple connection', async () => {
   await writeConnections({ components, context });
   expect(mockWriteBuildArtifact.mock.calls).toEqual([
     [
-      {
-        filePath: 'connections/connection1.json',
-        content: `{
-  "id": "connection:connection1",
-  "connectionId": "connection1"
-}`,
-      },
+      'connections/connection1.json',
+      '{"id":"connection:connection1","connectionId":"connection1"}',
     ],
     [
-      {
-        filePath: 'connections/connection2.json',
-        content: `{
-  "id": "connection:connection2",
-  "connectionId": "connection2"
-}`,
-      },
+      'connections/connection2.json',
+      '{"id":"connection:connection2","connectionId":"connection2"}',
     ],
   ]);
 });

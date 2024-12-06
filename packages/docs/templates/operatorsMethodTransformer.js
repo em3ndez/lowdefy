@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ function transformer(obj) {
   if (!obj.methods) {
     return obj.page;
   }
-  const contentArray = obj.page.areas.content.blocks[0].blocks[1].blocks;
+  const contentArray = obj.page.blocks[1].areas.content.blocks[0].blocks[1].blocks;
   const operatorName = obj.page.properties.title;
 
   contentArray.push({
@@ -37,7 +37,7 @@ function transformer(obj) {
       type: 'Anchor',
       properties: {
         title: `${operatorName}.${method.name}`,
-        icon: 'LinkOutlined',
+        icon: 'AiOutlineLink',
       },
       events: {
         onClick: [
@@ -116,4 +116,4 @@ function transformer(obj) {
   return obj.page;
 }
 
-module.exports = transformer;
+export default transformer;

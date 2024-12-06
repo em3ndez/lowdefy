@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -14,15 +14,13 @@
   limitations under the License.
 */
 
-import getPageRoles from './getPageRoles';
+import getPageRoles from './getPageRoles.js';
 
 test('No roles', () => {
   const components = {
-    config: {
-      auth: {
-        pages: {
-          roles: {},
-        },
+    auth: {
+      pages: {
+        roles: {},
       },
     },
   };
@@ -32,13 +30,11 @@ test('No roles', () => {
 
 test('Roles, 1 page per role', () => {
   const components = {
-    config: {
-      auth: {
-        pages: {
-          roles: {
-            role1: ['page1'],
-            role2: ['page2'],
-          },
+    auth: {
+      pages: {
+        roles: {
+          role1: ['page1'],
+          role2: ['page2'],
         },
       },
     },
@@ -52,13 +48,11 @@ test('Roles, 1 page per role', () => {
 
 test('Multiple roles on a page', () => {
   const components = {
-    config: {
-      auth: {
-        pages: {
-          roles: {
-            role1: ['page1', 'page2'],
-            role2: ['page2', 'page3'],
-          },
+    auth: {
+      pages: {
+        roles: {
+          role1: ['page1', 'page2'],
+          role2: ['page2', 'page3'],
         },
       },
     },

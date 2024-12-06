@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -14,181 +14,258 @@
   limitations under the License.
 */
 
+import { jest } from '@jest/globals';
 import path from 'path';
-import startUp from './startUp';
-import checkForUpdatedVersions from './checkForUpdatedVersions';
-import createPrint from './print';
-// eslint-disable-next-line no-unused-vars
-import getLowdefyYaml from './getLowdefyYaml';
-// eslint-disable-next-line no-unused-vars
-import getCliJson from './getCliJson';
-// eslint-disable-next-line no-unused-vars
-import getSendTelemetry from './getSendTelemetry';
-// eslint-disable-next-line no-unused-vars
-import packageJson from '../../package.json';
 
-jest.mock('./getLowdefyYaml', () =>
-  jest.fn(async () =>
+jest.unstable_mockModule('./getLowdefyYaml.js', () => ({
+  default: jest.fn(() =>
     Promise.resolve({ cliConfig: { cliConfig: true }, lowdefyVersion: 'lowdefyVersion' })
-  )
-);
-jest.mock('./getCliJson', () => async () => Promise.resolve({ appId: 'appId' }));
-jest.mock('./print', () => {
-  const error = jest.fn();
-  const log = jest.fn();
-  return () => ({
-    error,
-    log,
-  });
-});
+  ),
+}));
+jest.unstable_mockModule('./getCliJson.js', () => ({
+  default: () => Promise.resolve({ appId: 'appId' }),
+}));
+jest.unstable_mockModule('./createPrint.js', () => ({
+  default: () => ({
+    error: jest.fn(),
+    log: jest.fn(),
+  }),
+}));
 jest.mock('../../package.json', () => ({ version: 'cliVersion' }));
-jest.mock('./getSendTelemetry', () => () => 'sendTelemetry');
-jest.mock('./checkForUpdatedVersions', () => jest.fn(() => 'checkForUpdatedVersions'));
-
-const print = createPrint();
+jest.unstable_mockModule('./getSendTelemetry.js', () => ({ default: () => 'sendTelemetry' }));
+jest.unstable_mockModule('./validateVersion.js', () => ({
+  default: jest.fn(),
+}));
 
 const command = {
   name: () => 'test',
 };
 
 test('startUp, options empty', async () => {
-  const context = {};
+  const startUp = (await import('./startUp.js')).default;
+  const validateVersion = (await import('./validateVersion.js')).default;
+  const context = { cliVersion: 'cliVersion' };
   await startUp({ context, options: {}, command });
+  const print = context.print;
   expect(context).toEqual({
     appId: 'appId',
-    baseDirectory: path.resolve(process.cwd()),
-    cacheDirectory: path.resolve(process.cwd(), './.lowdefy/.cache'),
     cliConfig: { cliConfig: true },
     cliVersion: 'cliVersion',
     command: 'test',
     commandLineOptions: {},
+    configDirectory: path.resolve(process.cwd()),
+    directories: {
+      build: path.resolve(process.cwd(), './.lowdefy/server/build'),
+      config: path.resolve(process.cwd()),
+      dev: path.resolve(process.cwd(), './.lowdefy/dev'),
+      server: path.resolve(process.cwd(), './.lowdefy/server'),
+    },
+    license: {
+      code: 'NO_LICENSE',
+      entitlements: [],
+      id: 'NO_LICENSE',
+      metadata: {},
+      timestamp: context.license.timestamp,
+    },
     lowdefyVersion: 'lowdefyVersion',
     options: { cliConfig: true },
-    outputDirectory: path.resolve(process.cwd(), './.lowdefy/build'),
+    pnpmCmd: context.pnpmCmd,
     print,
+    requiresLowdefyYaml: true,
     sendTelemetry: 'sendTelemetry',
   });
-  expect(checkForUpdatedVersions).toHaveBeenCalledTimes(1);
-  expect(print.log.mock.calls).toEqual([
-    ["Running 'lowdefy test'. Lowdefy app version lowdefyVersion."],
-  ]);
+  expect(validateVersion).toHaveBeenCalledTimes(1);
+  expect(print).toMatchInlineSnapshot(`
+  Object {
+    "error": [MockFunction],
+    "log": [MockFunction] {
+      "calls": Array [
+        Array [
+          "Running 'lowdefy test'. Lowdefy app version lowdefyVersion.",
+        ],
+      ],
+      "results": Array [
+        Object {
+          "type": "return",
+          "value": undefined,
+        },
+      ],
+    },
+  }
+`);
 });
 
 test('startUp, options undefined', async () => {
-  const context = {};
+  const startUp = (await import('./startUp.js')).default;
+  const validateVersion = (await import('./validateVersion.js')).default;
+  const context = { cliVersion: 'cliVersion' };
   await startUp({ context, command });
+  const print = context.print;
   expect(context).toEqual({
     appId: 'appId',
-    baseDirectory: path.resolve(process.cwd()),
-    cacheDirectory: path.resolve(process.cwd(), './.lowdefy/.cache'),
     cliConfig: { cliConfig: true },
     cliVersion: 'cliVersion',
     command: 'test',
     commandLineOptions: {},
+    configDirectory: path.resolve(process.cwd()),
+    directories: {
+      build: path.resolve(process.cwd(), './.lowdefy/server/build'),
+      config: path.resolve(process.cwd()),
+      dev: path.resolve(process.cwd(), './.lowdefy/dev'),
+      server: path.resolve(process.cwd(), './.lowdefy/server'),
+    },
+    license: {
+      code: 'NO_LICENSE',
+      entitlements: [],
+      id: 'NO_LICENSE',
+      metadata: {},
+      timestamp: context.license.timestamp,
+    },
     lowdefyVersion: 'lowdefyVersion',
     options: { cliConfig: true },
-    outputDirectory: path.resolve(process.cwd(), './.lowdefy/build'),
+    pnpmCmd: context.pnpmCmd,
     print,
+    requiresLowdefyYaml: true,
     sendTelemetry: 'sendTelemetry',
   });
+  expect(validateVersion).toHaveBeenCalledTimes(1);
+  expect(print).toMatchInlineSnapshot(`
+    Object {
+      "error": [MockFunction],
+      "log": [MockFunction] {
+        "calls": Array [
+          Array [
+            "Running 'lowdefy test'. Lowdefy app version lowdefyVersion.",
+          ],
+        ],
+        "results": Array [
+          Object {
+            "type": "return",
+            "value": undefined,
+          },
+        ],
+      },
+    }
+  `);
 });
 
-test('startUp, options baseDirectory', async () => {
-  const context = {};
-  await startUp({ context, options: { baseDirectory: './baseDirectory' }, command });
+test('startUp, options configDirectory', async () => {
+  const startUp = (await import('./startUp.js')).default;
+  const context = { cliVersion: 'cliVersion' };
+  await startUp({ context, options: { configDirectory: './configDirectory' }, command });
+  const print = context.print;
   expect(context).toEqual({
     appId: 'appId',
-    baseDirectory: path.resolve(process.cwd(), 'baseDirectory'),
-    cacheDirectory: path.resolve(process.cwd(), 'baseDirectory/.lowdefy/.cache'),
+    configDirectory: path.resolve(process.cwd(), 'configDirectory'),
     cliConfig: { cliConfig: true },
     cliVersion: 'cliVersion',
     command: 'test',
-    commandLineOptions: { baseDirectory: './baseDirectory' },
-    lowdefyVersion: 'lowdefyVersion',
-    options: {
-      cliConfig: true,
-      baseDirectory: './baseDirectory',
+    commandLineOptions: { configDirectory: './configDirectory' },
+    directories: {
+      build: path.resolve(process.cwd(), './configDirectory/.lowdefy/server/build'),
+      config: path.resolve(process.cwd(), './configDirectory'),
+      dev: path.resolve(process.cwd(), './configDirectory/.lowdefy/dev'),
+      server: path.resolve(process.cwd(), './configDirectory/.lowdefy/server'),
     },
-    outputDirectory: path.resolve(process.cwd(), 'baseDirectory/.lowdefy/build'),
-    sendTelemetry: 'sendTelemetry',
-    print,
-  });
-});
-
-test('startUp, options outputDirectory', async () => {
-  const context = {};
-  await startUp({ context, options: { outputDirectory: './outputDirectory' }, command });
-  expect(context).toEqual({
-    appId: 'appId',
-    baseDirectory: path.resolve(process.cwd()),
-    cacheDirectory: path.resolve(process.cwd(), './.lowdefy/.cache'),
-    cliConfig: { cliConfig: true },
-    cliVersion: 'cliVersion',
-    command: 'test',
-    commandLineOptions: { outputDirectory: './outputDirectory' },
-    lowdefyVersion: 'lowdefyVersion',
-    options: {
-      cliConfig: true,
-      outputDirectory: './outputDirectory',
-    },
-    outputDirectory: path.resolve(process.cwd(), 'outputDirectory'),
-    sendTelemetry: 'sendTelemetry',
-    print,
-  });
-});
-
-test('startUp, options baseDirectory and outputDirectory', async () => {
-  const context = {};
-  await startUp({
-    context,
-    options: {
-      baseDirectory: './baseDirectory',
-      outputDirectory: './outputDirectory',
-    },
-    command,
-  });
-
-  expect(context).toEqual({
-    appId: 'appId',
-    baseDirectory: path.resolve(process.cwd(), 'baseDirectory'),
-    cacheDirectory: path.resolve(process.cwd(), 'baseDirectory/.lowdefy/.cache'),
-    cliConfig: { cliConfig: true },
-    cliVersion: 'cliVersion',
-    command: 'test',
-    commandLineOptions: {
-      baseDirectory: './baseDirectory',
-      outputDirectory: './outputDirectory',
+    license: {
+      code: 'NO_LICENSE',
+      entitlements: [],
+      id: 'NO_LICENSE',
+      metadata: {},
+      timestamp: context.license.timestamp,
     },
     lowdefyVersion: 'lowdefyVersion',
     options: {
-      baseDirectory: './baseDirectory',
       cliConfig: true,
-      outputDirectory: './outputDirectory',
+      configDirectory: './configDirectory',
     },
-    outputDirectory: path.resolve(process.cwd(), 'outputDirectory'),
-    sendTelemetry: 'sendTelemetry',
+    pnpmCmd: context.pnpmCmd,
     print,
+    requiresLowdefyYaml: true,
+    sendTelemetry: 'sendTelemetry',
   });
 });
 
 test('startUp, no lowdefyVersion returned', async () => {
+  const startUp = (await import('./startUp.js')).default;
+  const validateVersion = (await import('./validateVersion.js')).default;
+  const getLowdefyYaml = (await import('./getLowdefyYaml.js')).default;
   getLowdefyYaml.mockImplementationOnce(() => ({ cliConfig: {} }));
-  const context = {};
+  const context = { cliVersion: 'cliVersion' };
   await startUp({ context, options: {}, command });
+  const print = context.print;
   expect(context).toEqual({
     appId: 'appId',
-    baseDirectory: path.resolve(process.cwd()),
-    cacheDirectory: path.resolve(process.cwd(), './.lowdefy/.cache'),
+    configDirectory: path.resolve(process.cwd()),
     cliConfig: {},
     cliVersion: 'cliVersion',
     command: 'test',
     commandLineOptions: {},
+    directories: {
+      build: path.resolve(process.cwd(), './.lowdefy/server/build'),
+      config: path.resolve(process.cwd()),
+      dev: path.resolve(process.cwd(), './.lowdefy/dev'),
+      server: path.resolve(process.cwd(), './.lowdefy/server'),
+    },
+    license: {
+      code: 'NO_LICENSE',
+      entitlements: [],
+      id: 'NO_LICENSE',
+      metadata: {},
+      timestamp: context.license.timestamp,
+    },
     lowdefyVersion: undefined,
     options: {},
-    outputDirectory: path.resolve(process.cwd(), './.lowdefy/build'),
+    pnpmCmd: context.pnpmCmd,
     print,
+    requiresLowdefyYaml: true,
     sendTelemetry: 'sendTelemetry',
   });
-  expect(checkForUpdatedVersions).toHaveBeenCalledTimes(1);
+  expect(validateVersion).toHaveBeenCalledTimes(1);
   expect(print.log.mock.calls).toEqual([["Running 'lowdefy test'."]]);
+});
+
+test('startUp, requiresLowdefyYaml false with command "init"', async () => {
+  const startUp = (await import('./startUp.js')).default;
+  const validateVersion = (await import('./validateVersion.js')).default;
+  const getLowdefyYaml = (await import('./getLowdefyYaml.js')).default;
+  getLowdefyYaml.mockImplementationOnce(() => ({ cliConfig: {} }));
+  const context = { cliVersion: 'cliVersion' };
+  await startUp({
+    context,
+    options: {},
+    command: {
+      name: () => 'init',
+    },
+  });
+  const print = context.print;
+  expect(context).toEqual({
+    appId: 'appId',
+    configDirectory: path.resolve(process.cwd()),
+    cliConfig: {},
+    cliVersion: 'cliVersion',
+    command: 'init',
+    commandLineOptions: {},
+    directories: {
+      build: path.resolve(process.cwd(), './.lowdefy/server/build'),
+      config: path.resolve(process.cwd()),
+      dev: path.resolve(process.cwd(), './.lowdefy/dev'),
+      server: path.resolve(process.cwd(), './.lowdefy/server'),
+    },
+    license: {
+      code: 'NO_LICENSE',
+      entitlements: [],
+      id: 'NO_LICENSE',
+      metadata: {},
+      timestamp: context.license.timestamp,
+    },
+    lowdefyVersion: undefined,
+    options: {},
+    pnpmCmd: context.pnpmCmd,
+    print,
+    requiresLowdefyYaml: false,
+    sendTelemetry: 'sendTelemetry',
+  });
+  expect(validateVersion).toHaveBeenCalledTimes(1);
+  expect(print.log.mock.calls).toEqual([["Running 'lowdefy init'."]]);
 });

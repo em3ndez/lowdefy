@@ -1,4 +1,4 @@
-# Copyright 2020-2021 Lowdefy, Inc
+# Copyright 2020-2024 Lowdefy, Inc
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ _ref:
   vars:
     block_type: Collapse
     category: container
-    schema: ../blocks/blocksAntd/src/blocks/Collapse/Collapse.json
+    schema: ../plugins/blocks/blocks-antd/src/blocks/Collapse/schema.json
     description_content: |
       A container with collapsible panels. The area keys are user defined, and should be listed under the `panels` property. Each panel also has a 'extra' content area, the key of which can be defined in the `panels.$.extraKey` property.
     init_state_values:

@@ -1,4 +1,4 @@
-# Copyright 2020-2021 Lowdefy, Inc
+# Copyright 2020-2024 Lowdefy, Inc
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -21,16 +21,6 @@ _ref:
       _var: pageTitle
     section: Actions
     content:
-      - id: warning
-        type: Alert
-        visible:
-          _not: 
-            _not:
-              _var: warning
-        properties:
-          message: 
-            _var: warning
-          type: warning
       - id: types
         type: Markdown
         style:
@@ -54,6 +44,17 @@ _ref:
         properties:
           content:
             _var: params
+      {% endif %}
+      {% if response %}
+      - id: params_title
+        type: Markdown
+        properties:
+          content: '#### Response'
+      - id: response
+        type: MarkdownWithCode
+        properties:
+          content:
+            _var: response
       {% endif %}
       {% if examples %}
       - id: examples_title

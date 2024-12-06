@@ -1,4 +1,4 @@
-# Copyright 2020-2021 Lowdefy, Inc
+# Copyright 2020-2024 Lowdefy, Inc
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,16 +17,15 @@ _ref:
   vars:
     block_type: Markdown
     category: display
-    schema: ../blocks/blocksMarkdown/src/blocks/Markdown/Markdown.json
+    schema: ../plugins/blocks/blocks-markdown/src/blocks/Markdown/schema.json
     filePath: blocks/display/Markdown.yaml
     init_property_values:
       content: |
-        ### Welcome to Lowdefy 
+        ### Welcome to Lowdefy
 
         Click [here](https://lowdefy.com) to learn more about Lowdefy.
-        
+
     description_content: |
-      Render markdown text content. 
-      
+      Render markdown text content.
+
       > For more details on markdown syntax see: [Markdown cheat sheet](https://guides.github.com/features/mastering-markdown/).
-    

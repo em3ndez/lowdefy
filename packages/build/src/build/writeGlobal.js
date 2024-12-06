@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
   limitations under the License.
 */
 
-import { type } from '@lowdefy/helpers';
+import { type, serializer } from '@lowdefy/helpers';
 
 async function writeGlobal({ components, context }) {
   if (type.isNone(components.global)) {
@@ -23,10 +23,7 @@ async function writeGlobal({ components, context }) {
   if (!type.isObject(components.global)) {
     throw new Error('Global is not an object.');
   }
-  await context.writeBuildArtifact({
-    filePath: 'global.json',
-    content: JSON.stringify(components.global, null, 2),
-  });
+  await context.writeBuildArtifact('global.json', serializer.serializeToString(components.global));
 }
 
 export default writeGlobal;

@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -53,9 +53,10 @@ class Events {
     this.events[name] = this.initEvent(actions);
   }
 
-  async triggerEvent({ name, event }) {
+  triggerEvent({ name, event, progress }) {
+    this.context._internal.lowdefy.eventCallback?.({ name, blockId: this.block.blockId });
     const eventDescription = this.events[name];
-    let result = {
+    const result = {
       blockId: this.block.blockId,
       event,
       eventName: name,
@@ -71,22 +72,23 @@ class Events {
     }
     eventDescription.loading = true;
     this.block.update = true;
-    this.context.update();
+    this.context._internal.update();
 
     const actionHandle = async () => {
-      const res = await this.context.Actions.callActions({
+      const res = await this.context._internal.Actions.callActions({
         actions: eventDescription.actions,
         arrayIndices: this.arrayIndices,
         block: this.block,
         catchActions: eventDescription.catchActions,
         event,
         eventName: name,
+        progress,
       });
       eventDescription.history.unshift(res);
       this.context.eventLog.unshift(res);
       eventDescription.loading = false;
       this.block.update = true;
-      this.context.update();
+      this.context._internal.update();
       return res;
     };
 

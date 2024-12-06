@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,16 +16,19 @@
 
 import path from 'path';
 
-function getDirectories({ baseDirectory, options }) {
-  const cacheDirectory = path.resolve(baseDirectory, './.lowdefy/.cache');
-
-  let outputDirectory;
-  if (options.outputDirectory) {
-    outputDirectory = path.resolve(options.outputDirectory);
-  } else {
-    outputDirectory = path.resolve(baseDirectory, './.lowdefy/build');
-  }
-  return { cacheDirectory, outputDirectory };
+function getDirectories({ configDirectory, options }) {
+  const dotLowdefy = path.resolve(configDirectory, '.lowdefy');
+  const server = options.serverDirectory
+    ? path.resolve(options.serverDirectory)
+    : path.join(dotLowdefy, 'server');
+  // TODO: Read server directory from env var
+  // Priority should be CLI arguments, env var, CLI options in Lowdefy config
+  return {
+    config: configDirectory,
+    build: path.join(server, 'build'),
+    server,
+    dev: options.devDirectory ? path.resolve(options.devDirectory) : path.join(dotLowdefy, 'dev'),
+  };
 }
 
 export default getDirectories;

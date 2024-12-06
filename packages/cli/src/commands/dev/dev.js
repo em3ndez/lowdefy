@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -14,57 +14,21 @@
   limitations under the License.
 */
 
-import opener from 'opener';
-
-import buildWatcher from './buildWatcher';
-import envWatcher from './envWatcher';
-import getBuild from './getBuild';
-import getExpress from './getExpress';
-import getGraphQL from './getGraphQL';
-import prepare from './prepare';
-import versionWatcher from './versionWatcher';
-
-async function initialBuild({ context }) {
-  const build = await getBuild({ context });
-  try {
-    await build();
-    // eslint-disable-next-line no-empty
-  } catch (error) {}
-  return build;
-}
-
-async function serverSetup({ context }) {
-  const gqlServer = await getGraphQL({ context });
-  return getExpress({ context, gqlServer });
-}
+import addCustomPluginsAsDeps from '../../utils/addCustomPluginsAsDeps.js';
+import installServer from '../../utils/installServer.js';
+import resetServerPackageJson from '../../utils/resetServerPackageJson.js';
+import runDevServer from './runDevServer.js';
+import getServer from '../../utils/getServer.js';
 
 async function dev({ context }) {
-  await prepare({ context });
-  const initialBuildPromise = initialBuild({ context });
-  const serverSetupPromise = serverSetup({ context });
-
-  const [build, { expressApp, reloadFn }] = await Promise.all([
-    initialBuildPromise,
-    serverSetupPromise,
-  ]);
-
-  buildWatcher({ build, context, reloadFn });
-  envWatcher({ context });
-  versionWatcher({ context });
-
-  context.print.log('Starting Lowdefy development server.');
-
-  const port = expressApp.get('port');
-  expressApp.listen(port, function () {
-    context.print.info(`Development server listening on port ${port}`);
-  });
-  opener(`http://localhost:${port}`);
-
-  await context.sendTelemetry({
-    data: {
-      type: 'startup',
-    },
-  });
+  const directory = context.directories.dev;
+  context.print.info('Starting development server.');
+  await getServer({ context, packageName: '@lowdefy/server-dev', directory });
+  await resetServerPackageJson({ context, directory });
+  await addCustomPluginsAsDeps({ context, directory });
+  await installServer({ context, directory });
+  context.sendTelemetry();
+  await runDevServer({ context, directory });
 }
 
 export default dev;

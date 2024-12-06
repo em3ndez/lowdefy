@@ -1,4 +1,4 @@
-# Copyright 2020-2021 Lowdefy, Inc
+# Copyright 2020-2024 Lowdefy, Inc
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,21 +14,6 @@
 
 id: "{{ pageId }}"
 type: PageHeaderMenu
-requests:
-  - id: post_telemetry
-    type: AxiosHttp
-    connectionId: lowdefy_api_telemetry
-    properties:
-      data:
-        session_id:
-          _global: session_id
-        page_id:
-          _var: pageId
-        url_query:
-          _url_query: true
-        input:
-          _input: true
-
 events:
   onInit:
     - id: set_session_id
@@ -43,16 +28,6 @@ events:
           _random:
             type: string
             length: 16
-  onEnterAsync:
-    - id: connect_docsearch
-      type: JsAction
-      params:
-        name: connectDocsearch
-    - id: post_telemetry
-      type: Request
-      messages:
-        error: false
-      params: post_telemetry
 
 properties:
   title: {{ pageTitle }}
@@ -182,8 +157,8 @@ areas:
               - id: links-{{ item.pageId }}
                 type: Anchor
                 properties:
-                  icon: LinkOutlined
-                  href: /{{ item.pageId }}
+                  icon: AiOutlineLink
+                  pageId: {{ item.pageId }}
                   title: {{ item.title }}
               {% endfor %}
 

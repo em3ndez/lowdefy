@@ -1,4 +1,4 @@
-# Copyright 2020-2021 Lowdefy, Inc
+# Copyright 2020-2024 Lowdefy, Inc
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ _ref:
   vars:
     block_type: Span
     category: container
-    schema: ../blocks/blocksBasic/src/blocks/Span/Span.json
+    schema: ../plugins/blocks/blocks-basic/src/blocks/Span/schema.json
     filePath: blocks/container/Span.yaml
     description_content: |
       A Span is a container that places sub-blocks into a html `<span>`.

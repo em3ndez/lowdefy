@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -14,8 +14,10 @@
   limitations under the License.
 */
 
-import writeGlobal from './writeGlobal';
-import testContext from '../test/testContext';
+import { jest } from '@jest/globals';
+
+import writeGlobal from './writeGlobal.js';
+import testContext from '../test/testContext.js';
 
 const mockWriteBuildArtifact = jest.fn();
 
@@ -32,16 +34,7 @@ test('writeGlobal', async () => {
     },
   };
   await writeGlobal({ components, context });
-  expect(mockWriteBuildArtifact.mock.calls).toEqual([
-    [
-      {
-        filePath: 'global.json',
-        content: `{
-  "key": "value"
-}`,
-      },
-    ],
-  ]);
+  expect(mockWriteBuildArtifact.mock.calls).toEqual([['global.json', '{"key":"value"}']]);
 });
 
 test('writeGlobal empty global', async () => {
@@ -49,27 +42,13 @@ test('writeGlobal empty global', async () => {
     global: {},
   };
   await writeGlobal({ components, context });
-  expect(mockWriteBuildArtifact.mock.calls).toEqual([
-    [
-      {
-        filePath: 'global.json',
-        content: `{}`,
-      },
-    ],
-  ]);
+  expect(mockWriteBuildArtifact.mock.calls).toEqual([['global.json', '{}']]);
 });
 
 test('writeGlobal global undefined', async () => {
   const components = {};
   await writeGlobal({ components, context });
-  expect(mockWriteBuildArtifact.mock.calls).toEqual([
-    [
-      {
-        filePath: 'global.json',
-        content: `{}`,
-      },
-    ],
-  ]);
+  expect(mockWriteBuildArtifact.mock.calls).toEqual([['global.json', '{}']]);
 });
 
 test('writeGlobal global not an object', async () => {

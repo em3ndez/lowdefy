@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -14,16 +14,13 @@
   limitations under the License.
 */
 
-import { type } from '@lowdefy/helpers';
+import { type, serializer } from '@lowdefy/helpers';
 
 async function writeMenus({ components, context }) {
   if (!type.isArray(components.menus)) {
     throw new Error('Menus is not an array.');
   }
-  await context.writeBuildArtifact({
-    filePath: 'menus.json',
-    content: JSON.stringify(components.menus, null, 2),
-  });
+  await context.writeBuildArtifact('menus.json', serializer.serializeToString(components.menus));
 }
 
 export default writeMenus;

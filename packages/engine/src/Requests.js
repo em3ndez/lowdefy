@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -14,103 +14,107 @@
   limitations under the License.
 */
 
-import gql from 'graphql-tag';
-import { get, serializer } from '@lowdefy/helpers';
-
-const CALL_REQUEST = gql`
-  query callRequest($input: RequestInput!) {
-    request(input: $input) {
-      id
-      type
-      success
-      response
-    }
-  }
-`;
+import { get, serializer, type } from '@lowdefy/helpers';
 
 class Requests {
   constructor(context) {
     this.context = context;
-    this.requestList = this.context.rootBlock.requests || [];
-
     this.callRequests = this.callRequests.bind(this);
     this.callRequest = this.callRequest.bind(this);
     this.fetch = this.fetch.bind(this);
+
+    this.requestConfig = {};
+
+    (this.context._internal.rootBlock.requests || []).forEach((request) => {
+      this.requestConfig[request.requestId] = request;
+    });
   }
 
-  callRequests({ requestIds, event, arrayIndices } = {}) {
-    if (!requestIds) {
+  callRequests({ actions, arrayIndices, blockId, event, params } = {}) {
+    if (type.isObject(params) && params.all === true) {
       return Promise.all(
-        this.requestList.map((request) =>
-          this.callRequest({ requestId: request.requestId, event, arrayIndices })
+        Object.keys(this.requestConfig).map((requestId) =>
+          this.callRequest({ arrayIndices, blockId, event, requestId })
         )
       );
     }
-    return Promise.all(
-      requestIds.map((requestId) => this.callRequest({ requestId, event, arrayIndices }))
+
+    let requestIds = [];
+    if (type.isString(params)) requestIds = [params];
+    if (type.isArray(params)) requestIds = params;
+
+    const requests = requestIds.map((requestId) =>
+      this.callRequest({ actions, requestId, blockId, event, arrayIndices })
     );
+    this.context._internal.update(); // update to render request reset
+    return Promise.all(requests);
   }
 
-  callRequest({ requestId, event, arrayIndices }) {
+  async callRequest({ actions, arrayIndices, blockId, event, requestId }) {
+    const requestConfig = this.requestConfig[requestId];
     if (!this.context.requests[requestId]) {
-      const request = this.requestList.find((req) => req.requestId === requestId);
-      if (!request) {
-        this.context.requests[requestId] = {
-          loading: false,
-          response: null,
-          error: [new Error(`Configuration Error: Request ${requestId} not defined on context.`)],
-        };
-        return Promise.reject(
-          new Error(`Configuration Error: Request ${requestId} not defined on context.`)
-        );
-      }
-      this.context.requests[requestId] = {
-        loading: true,
-        response: null,
-        error: [],
-      };
+      this.context.requests[requestId] = [];
     }
-
-    return this.fetch({ requestId, event, arrayIndices });
+    if (!requestConfig) {
+      const error = new Error(`Configuration Error: Request ${requestId} not defined on page.`);
+      this.context.requests[requestId].unshift({
+        blockId: 'block_id',
+        error,
+        loading: false,
+        requestId,
+        response: null,
+      });
+      throw error;
+    }
+    const { output: payload, errors: parserErrors } = this.context._internal.parser.parse({
+      actions,
+      event,
+      arrayIndices,
+      input: requestConfig.payload,
+      location: requestId,
+    });
+    if (parserErrors.length > 0) {
+      throw parserErrors[0];
+    }
+    const request = {
+      blockId,
+      loading: true,
+      payload,
+      requestId,
+      response: null,
+    };
+    this.context.requests[requestId].unshift(request);
+    return this.fetch(request);
   }
 
-  async fetch({ requestId, event, arrayIndices }) {
-    this.context.requests[requestId].loading = true;
-    if (this.context.RootBlocks) {
-      this.context.RootBlocks.setBlocksLoadingCache();
-    }
+  async fetch(request) {
+    request.loading = true;
+    const startTime = Date.now();
 
     try {
-      const gqlResponse = await this.context.lowdefy.client.query({
-        query: CALL_REQUEST,
-        fetchPolicy: 'network-only',
-        variables: {
-          input: {
-            arrayIndices,
-            requestId,
-            blockId: this.context.blockId,
-            event: serializer.serialize(event) || {},
-            input: serializer.serialize(this.context.lowdefy.inputs[this.context.id]),
-            lowdefyGlobal: serializer.serialize(this.context.lowdefy.lowdefyGlobal),
-            pageId: this.context.pageId,
-            state: serializer.serialize(this.context.state),
-            urlQuery: serializer.serialize(this.context.lowdefy.urlQuery),
-          },
-        },
+      const response = await this.context._internal.lowdefy._internal.callRequest({
+        blockId: request.blockId,
+        pageId: this.context.pageId,
+        payload: serializer.serialize(request.payload),
+        requestId: request.requestId,
       });
-      const response = serializer.deserialize(
-        get(gqlResponse, 'data.request.response', {
+      const deserializedResponse = serializer.deserialize(
+        get(response, 'response', {
           default: null,
         })
       );
-      this.context.requests[requestId].response = response;
-      this.context.requests[requestId].loading = false;
-      this.context.update();
-      return response;
+      request.response = deserializedResponse;
+      request.loading = false;
+      const endTime = Date.now();
+      request.responseTime = endTime - startTime;
+      this.context._internal.update();
+      return deserializedResponse;
     } catch (error) {
-      this.context.requests[requestId].error.unshift(error);
-      this.context.requests[requestId].loading = false;
-      this.context.update();
+      request.error = error;
+      request.loading = false;
+      const endTime = Date.now();
+      request.responseTime = endTime - startTime;
+      this.context._internal.update();
       throw error;
     }
   }

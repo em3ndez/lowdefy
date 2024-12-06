@@ -1,7 +1,7 @@
 /* eslint-disable no-param-reassign */
 
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,8 +17,9 @@
 */
 
 import { type } from '@lowdefy/helpers';
+import createCheckDuplicateId from '../utils/createCheckDuplicateId.js';
 
-async function buildDefaultMenu({ components, context }) {
+function buildDefaultMenu({ components, context }) {
   context.logger.warn('No menus found. Building default menu.');
   const pages = type.isArray(components.pages) ? components.pages : [];
   const menus = [
@@ -38,7 +39,7 @@ async function buildDefaultMenu({ components, context }) {
   return menus;
 }
 
-function loopItems(parent, menuId, pages, missingPageWarnings) {
+function loopItems({ parent, menuId, pages, missingPageWarnings, checkDuplicateMenuItemId }) {
   if (type.isArray(parent.links)) {
     parent.links.forEach((menuItem) => {
       if (menuItem.type === 'MenuLink') {
@@ -62,32 +63,48 @@ function loopItems(parent, menuId, pages, missingPageWarnings) {
       if (menuItem.type === 'MenuGroup') {
         menuItem.auth = { public: true };
       }
+      checkDuplicateMenuItemId({ id: menuItem.id, menuId });
       menuItem.menuItemId = menuItem.id;
       menuItem.id = `menuitem:${menuId}:${menuItem.id}`;
-      loopItems(menuItem, menuId, pages, missingPageWarnings);
+      loopItems({ parent: menuItem, menuId, pages, missingPageWarnings, checkDuplicateMenuItemId });
     });
     parent.links = parent.links.filter((item) => item.remove !== true);
   }
 }
 
-async function buildMenu({ components, context }) {
+function buildMenu({ components, context }) {
   const pages = type.isArray(components.pages) ? components.pages : [];
   if (type.isUndefined(components.menus) || components.menus.length === 0) {
-    components.menus = await buildDefaultMenu({ components, context });
+    components.menus = buildDefaultMenu({ components, context });
   }
   const missingPageWarnings = [];
+  const checkDuplicateMenuId = createCheckDuplicateId({ message: 'Duplicate menuId "{{ id }}".' });
   components.menus.forEach((menu) => {
+    if (type.isUndefined(menu.id)) {
+      throw new Error(`Menu id missing.`);
+    }
+    if (!type.isString(menu.id)) {
+      throw new Error(`Menu id is not a string. Received ${JSON.stringify(menu.id)}.`);
+    }
+    checkDuplicateMenuId({ id: menu.id });
     menu.menuId = menu.id;
     menu.id = `menu:${menu.id}`;
-    loopItems(menu, menu.menuId, pages, missingPageWarnings);
+    const checkDuplicateMenuItemId = createCheckDuplicateId({
+      message: 'Duplicate menuItemId "{{ id }}" on menu "{{ menuId }}".',
+    });
+    loopItems({
+      parent: menu,
+      menuId: menu.menuId,
+      pages,
+      missingPageWarnings,
+      checkDuplicateMenuItemId,
+    });
   });
-  await Promise.all(
-    missingPageWarnings.map(async (warning) => {
-      await context.logger.warn(
-        `Page "${warning.pageId}" referenced in menu link "${warning.menuItemId}" not found.`
-      );
-    })
-  );
+  missingPageWarnings.map(async (warning) => {
+    context.logger.warn(
+      `Page "${warning.pageId}" referenced in menu link "${warning.menuItemId}" not found.`
+    );
+  });
   return components;
 }
 

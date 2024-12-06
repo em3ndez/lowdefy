@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -14,8 +14,10 @@
   limitations under the License.
 */
 
-import writeMenus from './writeMenus';
-import testContext from '../test/testContext';
+import { jest } from '@jest/globals';
+
+import writeMenus from './writeMenus.js';
+import testContext from '../test/testContext.js';
 
 const mockWriteBuildArtifact = jest.fn();
 
@@ -37,18 +39,7 @@ test('writeMenus', async () => {
   };
   await writeMenus({ components, context });
   expect(mockWriteBuildArtifact.mock.calls).toEqual([
-    [
-      {
-        filePath: 'menus.json',
-        content: `[
-  {
-    "id": "menu:default",
-    "menuId": "default",
-    "links": []
-  }
-]`,
-      },
-    ],
+    ['menus.json', '[{"id":"menu:default","menuId":"default","links":[]}]'],
   ]);
 });
 
@@ -57,14 +48,7 @@ test('writeMenus empty menus', async () => {
     menus: [],
   };
   await writeMenus({ components, context });
-  expect(mockWriteBuildArtifact.mock.calls).toEqual([
-    [
-      {
-        filePath: 'menus.json',
-        content: `[]`,
-      },
-    ],
-  ]);
+  expect(mockWriteBuildArtifact.mock.calls).toEqual([['menus.json', '[]']]);
 });
 
 test('writeMenus menus undefined', async () => {

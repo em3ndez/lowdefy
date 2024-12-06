@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -13,19 +13,26 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
+import { type } from '@lowdefy/helpers';
 
-import getRefContent from './getRefContent';
-import getRefsFromFile from './getRefsFromFile';
-import populateRefs from './populateRefs';
-import runTransformer from './runTransformer';
+import evaluateBuildOperators from './evaluateBuildOperators.js';
+import getKey from './getKey.js';
+import getRefContent from './getRefContent.js';
+import getRefsFromFile from './getRefsFromFile.js';
+import populateRefs from './populateRefs.js';
+import runTransformer from './runTransformer.js';
 
-async function recursiveParseFile({ context, refDef, count, referencedFrom }) {
+async function recursiveBuild({ context, refDef, count, referencedFrom }) {
   // TODO: Maybe it would be better to detect a cycle, since this is the real issue here?
-  if (count > 40) {
+  if (count > 10000) {
     throw new Error(`Maximum recursion depth of references exceeded.`);
   }
   let fileContent = await getRefContent({ context, refDef, referencedFrom });
-  const { foundRefs, fileContentBuiltRefs } = getRefsFromFile(fileContent);
+  const { foundRefs, fileContentBuiltRefs } = getRefsFromFile(
+    fileContent,
+    refDef.id,
+    context.refMap
+  );
 
   const parsedFiles = {};
 
@@ -34,7 +41,6 @@ async function recursiveParseFile({ context, refDef, count, referencedFrom }) {
   // To do this, since foundRefs is an array of ref definitions that are in order of the
   // deepest nodes first we for loop over over foundRefs one by one, awaiting each result.
 
-  // eslint-disable-next-line no-restricted-syntax
   for (const newRefDef of foundRefs.values()) {
     // Parse vars and path before passing down to parse new file
     const parsedRefDef = populateRefs({
@@ -42,8 +48,8 @@ async function recursiveParseFile({ context, refDef, count, referencedFrom }) {
       parsedFiles,
       refDef,
     });
-
-    const parsedFile = await recursiveParseFile({
+    context.refMap[parsedRefDef.id].path = parsedRefDef.path;
+    const parsedFile = await recursiveBuild({
       context,
       refDef: parsedRefDef,
       count: count + 1,
@@ -52,11 +58,33 @@ async function recursiveParseFile({ context, refDef, count, referencedFrom }) {
 
     const transformedFile = await runTransformer({
       context,
-      parsedFile,
+      input: parsedFile,
       refDef: parsedRefDef,
     });
 
-    parsedFiles[newRefDef.id] = transformedFile;
+    // Evaluated in recursive loop for better error messages
+    const evaluatedOperators = await evaluateBuildOperators({
+      context,
+      input: transformedFile,
+      refDef: parsedRefDef,
+    });
+
+    const withRefKey = getKey({
+      input: evaluatedOperators,
+      refDef: parsedRefDef,
+    });
+
+    const reviver = (_, value) => {
+      if (!type.isObject(value)) return value;
+      Object.defineProperty(value, '~r', {
+        value: refDef.id,
+        enumerable: false,
+        writable: true,
+        configurable: true,
+      });
+      return value;
+    };
+    parsedFiles[newRefDef.id] = JSON.parse(JSON.stringify(withRefKey), reviver);
   }
   return populateRefs({
     toPopulate: fileContentBuiltRefs,
@@ -65,4 +93,4 @@ async function recursiveParseFile({ context, refDef, count, referencedFrom }) {
   });
 }
 
-export default recursiveParseFile;
+export default recursiveBuild;

@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ async function getConfigFile({ context, refDef, referencedFrom }) {
     );
   }
 
-  const content = context.readConfigFile(refDef.path);
+  const content = await context.readConfigFile(refDef.path);
 
   if (content === null) {
     throw new Error(

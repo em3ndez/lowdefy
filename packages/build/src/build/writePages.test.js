@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -14,8 +14,10 @@
   limitations under the License.
 */
 
-import writePages from './writePages';
-import testContext from '../test/testContext';
+import { jest } from '@jest/globals';
+
+import writePages from './writePages.js';
+import testContext from '../test/testContext.js';
 
 const mockWriteBuildArtifact = jest.fn();
 
@@ -39,15 +41,8 @@ test('writePages write page', async () => {
   await writePages({ components, context });
   expect(mockWriteBuildArtifact.mock.calls).toEqual([
     [
-      {
-        filePath: 'pages/page1/page1.json',
-        content: `{
-  "id": "page:page1",
-  "pageId": "page1",
-  "blockId": "page1",
-  "requests": []
-}`,
-      },
+      'pages/page1/page1.json',
+      '{"id":"page:page1","pageId":"page1","blockId":"page1","requests":[]}',
     ],
   ]);
 });
@@ -72,26 +67,12 @@ test('writePages multiple pages', async () => {
   await writePages({ components, context });
   expect(mockWriteBuildArtifact.mock.calls).toEqual([
     [
-      {
-        filePath: 'pages/page1/page1.json',
-        content: `{
-  "id": "page:page1",
-  "pageId": "page1",
-  "blockId": "page1",
-  "requests": []
-}`,
-      },
+      'pages/page1/page1.json',
+      '{"id":"page:page1","pageId":"page1","blockId":"page1","requests":[]}',
     ],
     [
-      {
-        filePath: 'pages/page2/page2.json',
-        content: `{
-  "id": "page:page2",
-  "pageId": "page2",
-  "blockId": "page2",
-  "requests": []
-}`,
-      },
+      'pages/page2/page2.json',
+      '{"id":"page:page2","pageId":"page2","blockId":"page2","requests":[]}',
     ],
   ]);
 });
@@ -102,26 +83,4 @@ test('writePages no pages', async () => {
   };
   await writePages({ components, context });
   expect(mockWriteBuildArtifact.mock.calls).toEqual([]);
-});
-
-test('writePages pages undefined', async () => {
-  const components = {};
-  await writePages({ components, context });
-  expect(mockWriteBuildArtifact.mock.calls).toEqual([]);
-});
-
-test('writePages pages not an array', async () => {
-  const components = {
-    pages: 'pages',
-  };
-  await expect(writePages({ components, context })).rejects.toThrow('Pages is not an array.');
-});
-
-test('writePages page is not an object', async () => {
-  const components = {
-    pages: ['page'],
-  };
-  await expect(writePages({ components, context })).rejects.toThrow(
-    'Page is not an object. Received "page"'
-  );
 });

@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -14,22 +14,20 @@
   limitations under the License.
 */
 
-import propertiesFormTransformer from '../blocks/propertiesFormTransformer';
-import propertiesGetterTransformer from '../blocks/propertiesGetterTransformer';
-import defaultValueTransformer from '../blocks/defaultValueTransformer';
+import propertiesFormTransformer from '../blocks/propertiesFormTransformer.js';
+import propertiesGetterTransformer from '../blocks/propertiesGetterTransformer.js';
+import defaultValueTransformer from '../blocks/defaultValueTransformer.js';
 
 const schema = {
-  schema: {
+  properties: {
+    type: 'object',
+    additionalProperties: false,
     properties: {
-      type: 'object',
-      additionalProperties: false,
-      properties: {
-        field: {
-          type: 'object',
-          description: 'description',
-          docs: {
-            displayType: 'button',
-          },
+      field: {
+        type: 'object',
+        description: 'description',
+        docs: {
+          displayType: 'button',
         },
       },
     },
@@ -50,7 +48,7 @@ test('button propertiesFormTransformer', () => {
               "allowClear": true,
               "label": Object {
                 "align": "right",
-                "extra": "Name of an Ant Design Icon or properties of an Icon block to use icon in button.",
+                "extra": "Name of an React-Icon (See <a href=\\"https://react-icons.github.io/react-icons/\\">all icons</a>) or properties of an Icon block to use icon in button.",
                 "span": 8,
               },
               "options": Object {
@@ -110,7 +108,7 @@ test('button propertiesFormTransformer', () => {
         "properties": Object {
           "inner": true,
           "size": "small",
-          "title": "button:",
+          "title": "block.properties.field:",
         },
         "type": "Card",
       },
@@ -137,22 +135,20 @@ test('button propertiesGetterTransformer', () => {
 test('button defaultValueTransformer', () => {
   expect(defaultValueTransformer(schema)).toMatchInlineSnapshot(`Object {}`);
   const schemaDV = {
-    schema: {
+    properties: {
+      type: 'object',
+      additionalProperties: false,
       properties: {
-        type: 'object',
-        additionalProperties: false,
-        properties: {
-          field: {
-            type: 'object',
-            description: 'description',
-            docs: {
-              displayType: 'button',
-            },
-            default: {
-              icon: 'UploadOutlined',
-              title: 'Upload',
-              type: 'default',
-            },
+        field: {
+          type: 'object',
+          description: 'description',
+          docs: {
+            displayType: 'button',
+          },
+          default: {
+            icon: 'AiOutlineUpload',
+            title: 'Upload',
+            type: 'default',
           },
         },
       },
@@ -161,7 +157,7 @@ test('button defaultValueTransformer', () => {
   expect(defaultValueTransformer(schemaDV)).toMatchInlineSnapshot(`
     Object {
       "field": Object {
-        "icon": "UploadOutlined",
+        "icon": "AiOutlineUpload",
         "title": "Upload",
         "type": "default",
       },

@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -14,60 +14,87 @@
   limitations under the License.
 */
 
-import { WebParser } from '@lowdefy/operators';
+import buildTestPage from '@lowdefy/build/buildTestPage';
 
-import Actions from '../src/Actions';
-import Blocks from '../src/Blocks';
-import Requests from '../src/Requests';
-import State from '../src/State';
+import getContext from '../src/getContext.js';
+import testOperators from './testOperators.js';
+import testActions from './testActions.js';
 
-const testContext = async ({ lowdefy, rootBlock, initState = {} }) => {
+const testContext = async ({ lowdefy, pageConfig }) => {
   const testLowdefy = {
-    displayMessage: () => () => undefined,
-    inputs: { test: {} },
-    pageId: rootBlock.blockId,
-    updateBlock: () => {},
+    contexts: {},
+    inputs: {},
     urlQuery: {},
-    imports: {
-      jsActions: {},
-      jsOperators: {},
-    },
+    lowdefyGlobal: {},
+    home: {},
+    menus: [],
+    user: {},
     ...lowdefy,
+    _internal: {
+      callRequest: () => {},
+      displayMessage: () => () => {},
+      updateBlock: () => {},
+      ...lowdefy?._internal,
+      operators: testOperators,
+      actions: { ...testActions, ...lowdefy?._internal?.actions },
+      blockComponents: {
+        TextInput: {
+          meta: {
+            category: 'input',
+            valueType: 'string',
+          },
+        },
+        Box: {
+          meta: {
+            category: 'container',
+          },
+        },
+        Button: {
+          meta: {
+            category: 'display',
+          },
+        },
+        List: {
+          meta: {
+            category: 'list',
+            valueType: 'array',
+          },
+        },
+        Paragraph: {
+          meta: {
+            category: 'display',
+          },
+        },
+        Switch: {
+          meta: {
+            category: 'input',
+            valueType: 'boolean',
+          },
+        },
+        MultipleSelector: {
+          meta: {
+            category: 'input',
+            valueType: 'array',
+          },
+        },
+        NumberInput: {
+          meta: {
+            category: 'input',
+            valueType: 'number',
+          },
+        },
+        ...lowdefy?._internal?.blocks,
+      },
+    },
   };
-  const ctx = {
-    id: 'test',
-    blockId: rootBlock.blockId,
-    eventLog: [],
-    requests: {},
+  const buildConfig = buildTestPage({ pageConfig });
+  const ctx = getContext({
     lowdefy: testLowdefy,
-    rootBlock,
-    pageId: rootBlock.blockId,
-    // routeHistory: [], // init new routeHistory for each test
-    state: {},
-    updateListeners: new Set(),
-  };
-  ctx.parser = new WebParser({ context: ctx, contexts: {} });
-  ctx.operators = Object.keys(ctx.parser.operators);
-  await ctx.parser.init();
-  ctx.State = new State(ctx);
-  ctx.Actions = new Actions(ctx);
-  ctx.Requests = new Requests(ctx);
-  ctx.RootBlocks = new Blocks({
-    areas: { root: { blocks: [ctx.rootBlock] } },
-    context: ctx,
+    config: buildConfig,
+    resetContext: { reset: true, setReset: () => {} },
   });
-  ctx.RootBlocks.init();
-  ctx.update = () => {
-    ctx.RootBlocks.update();
-  };
-  if (initState) {
-    Object.keys(initState).forEach((key) => {
-      ctx.State.set(key, initState[key]);
-    });
-    ctx.RootBlocks.reset();
-  }
-  ctx.update();
-  ctx.State.freezeState();
+  await ctx._internal.runOnInit(() => {});
+  await ctx._internal.runOnInitAsync(() => {});
   return ctx;
 };
 

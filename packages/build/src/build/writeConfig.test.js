@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -14,8 +14,10 @@
   limitations under the License.
 */
 
-import writeConfig from './writeConfig';
-import testContext from '../test/testContext';
+import { jest } from '@jest/globals';
+
+import writeConfig from './writeConfig.js';
+import testContext from '../test/testContext.js';
 
 const mockWriteBuildArtifact = jest.fn();
 
@@ -32,16 +34,7 @@ test('writeConfig', async () => {
     },
   };
   await writeConfig({ components, context });
-  expect(mockWriteBuildArtifact.mock.calls).toEqual([
-    [
-      {
-        filePath: 'config.json',
-        content: `{
-  "key": "value"
-}`,
-      },
-    ],
-  ]);
+  expect(mockWriteBuildArtifact.mock.calls).toEqual([['config.json', '{"key":"value"}']]);
 });
 
 test('writeConfig empty config', async () => {
@@ -49,25 +42,11 @@ test('writeConfig empty config', async () => {
     config: {},
   };
   await writeConfig({ components, context });
-  expect(mockWriteBuildArtifact.mock.calls).toEqual([
-    [
-      {
-        filePath: 'config.json',
-        content: `{}`,
-      },
-    ],
-  ]);
+  expect(mockWriteBuildArtifact.mock.calls).toEqual([['config.json', '{}']]);
 });
 
 test('writeConfig config undefined', async () => {
   const components = {};
   await writeConfig({ components, context });
-  expect(mockWriteBuildArtifact.mock.calls).toEqual([
-    [
-      {
-        filePath: 'config.json',
-        content: `{}`,
-      },
-    ],
-  ]);
+  expect(mockWriteBuildArtifact.mock.calls).toEqual([['config.json', '{}']]);
 });

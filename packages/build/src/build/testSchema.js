@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,21 +15,19 @@
 */
 
 import { validate } from '@lowdefy/ajv';
-import lowdefySchema from '../lowdefySchema.json';
-import formatErrorMessage from '../utils/formatErrorMessage';
+import lowdefySchema from '../lowdefySchema.js';
+import formatErrorMessage from '../utils/formatErrorMessage.js';
 
-async function testSchema({ components, context }) {
+function testSchema({ components, context }) {
   const { valid, errors } = validate({
     schema: lowdefySchema,
     data: components,
     returnErrors: true,
   });
+
   if (!valid) {
-    await context.logger.warn('Schema not valid.');
-    const promises = errors.map((error) =>
-      context.logger.warn(formatErrorMessage({ error, components }))
-    );
-    await promises;
+    context.logger.warn('Schema not valid.');
+    errors.map((error) => context.logger.warn(formatErrorMessage({ error, components })));
   }
 }
 

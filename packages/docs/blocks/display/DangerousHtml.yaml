@@ -1,4 +1,4 @@
-# Copyright 2020-2021 Lowdefy, Inc
+# Copyright 2020-2024 Lowdefy, Inc
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@ _ref:
   vars:
     block_type: DangerousHtml
     category: display
-    schema: ../blocks/blocksBasic/src/blocks/DangerousHtml/DangerousHtml.json
+    schema: ../plugins/blocks/blocks-basic/src/blocks/DangerousHtml/schema.json
     filePath: blocks/display/DangerousHtml.yaml
     init_property_values:
       html: <a href="https://lowdefy.com">Lowdefy Website</a>

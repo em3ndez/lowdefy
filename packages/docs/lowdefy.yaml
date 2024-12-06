@@ -1,4 +1,4 @@
-# Copyright 2020-2021 Lowdefy, Inc
+# Copyright 2020-2024 Lowdefy, Inc
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,11 +13,17 @@
 # limitations under the License.
 
 name: '@lowdefy/docs'
-lowdefy: 3.23.2
-licence: Apache-2.0
+lowdefy: local
+license: Apache-2.0
 
 cli:
   disableTelemetry: true
+  watchIgnore:
+    - public/sitemap.xml
+
+plugins:
+  - name: '@lowdefy/docs'
+    version: 'workspace:*'
 
 global:
   all_icons:
@@ -30,37 +36,34 @@ app:
   html:
     appendHead:
       _ref: head.html
-    appendBody:
-      _ref: body.html
 
 connections:
-  - id: discord_channel
+  - id: discord
     type: AxiosHttp
     properties:
       method: post
       url:
         _secret: DISCORD_WEBHOOK
-  - id: lowdefy_api_marketing
-    type: AxiosHttp
+  - id: newsletter
+    type: MongoDBCollection
     properties:
-      method: post
-      baseURL:
-        _secret: LOWDEFY_API
-      url: /marketing
-  - id: lowdefy_api_telemetry
-    type: AxiosHttp
+      collection: newsletter
+      databaseUri:
+        _secret: MONGODB_URI
+      read: false
+      write: true
+  - id: feedback
+    type: MongoDBCollection
     properties:
-      method: post
-      baseURL:
-        _secret: LOWDEFY_API
-      url: /telemetry/docs
-
+      collection: feedback
+      databaseUri:
+        _secret: MONGODB_URI
+      read: false
+      write: true
 menus:
   _ref: menus.yaml
 
 pages:
   _ref:
     path: pages.yaml
-    # Commented out because it loops
-    # Use to generate new sitemap if pages are added
-    # transformer: templates/generateSitemap.js
+    transformer: templates/generateSitemap.js

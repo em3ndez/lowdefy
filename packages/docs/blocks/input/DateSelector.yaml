@@ -1,4 +1,4 @@
-# Copyright 2020-2021 Lowdefy, Inc
+# Copyright 2020-2024 Lowdefy, Inc
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,10 +18,9 @@ _ref:
     block_type: DateSelector
     value_type: date
     category: input
-    schema: ../blocks/blocksAntd/src/blocks/DateSelector/DateSelector.json
+    schema: ../plugins/blocks/blocks-antd/src/blocks/DateSelector/schema.json
     filePath: blocks/input/DateSelector.yaml
     description_content: |
       The `DateSelector` block allows a user to select a date from a calender.
 
       > Other date type blocks are `DateRangeSelector`, `DateTimeSelector`, `MonthSelector` and `WeekSelector`.
-

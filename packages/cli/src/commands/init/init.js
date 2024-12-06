@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,28 +15,28 @@
 */
 
 import path from 'path';
-import fse from 'fs-extra';
+import fs from 'fs';
 import { writeFile } from '@lowdefy/node-utils';
 
-import lowdefyFile from './lowdefyFile';
+import lowdefyFile from './lowdefyFile.js';
 
 async function init({ context }) {
   const lowdefyFilePath = path.resolve('./lowdefy.yaml');
-  const fileExists = fse.existsSync(lowdefyFilePath);
+  const fileExists = fs.existsSync(lowdefyFilePath);
   if (fileExists) {
     throw new Error('Cannot initialize a Lowdefy project, a "lowdefy.yaml" file already exists');
   }
-  context.print.log(`Initializing Lowdefy project`);
-  await writeFile({ filePath: lowdefyFilePath, content: lowdefyFile });
-  context.print.log(`Created 'lowdefy.yaml'.`);
-  await writeFile({
-    filePath: path.resolve('./.gitignore'),
-    content: `.lowdefy/**
-.env`,
-  });
-  context.print.log(`Created '.gitignore'.`);
+  context.print.log('Initializing Lowdefy project.');
+  await writeFile(lowdefyFilePath, lowdefyFile({ version: context.cliVersion }));
+  context.print.log("Created 'lowdefy.yaml'.");
+  await writeFile(
+    path.resolve('./.gitignore'),
+    `.lowdefy/**
+.env`
+  );
+  context.print.log("Created '.gitignore'.");
   await context.sendTelemetry();
-  context.print.succeed(`Project initialized.`);
+  context.print.succeed('Project initialized.');
 }
 
 export default init;

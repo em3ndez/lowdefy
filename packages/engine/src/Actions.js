@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
 */
 
 import { type } from '@lowdefy/helpers';
-import actions from './actions/index.js';
+import getActionMethods from './actions/getActionMethods.js';
 
 class Actions {
   constructor(context) {
@@ -24,7 +24,7 @@ class Actions {
     this.callActionLoop = this.callActionLoop.bind(this);
     this.callActions = this.callActions.bind(this);
     this.displayMessage = this.displayMessage.bind(this);
-    this.actions = actions;
+    this.actions = context._internal.lowdefy._internal.actions;
   }
 
   async callAsyncAction({ action, arrayIndices, block, event, index, responses }) {
@@ -44,7 +44,7 @@ class Actions {
     }
   }
 
-  async callActionLoop({ actions, arrayIndices, block, event, responses }) {
+  async callActionLoop({ actions, arrayIndices, block, event, progress, responses }) {
     for (const [index, action] of actions.entries()) {
       try {
         if (action.async === true) {
@@ -54,6 +54,7 @@ class Actions {
             block,
             event,
             index,
+            progress,
             responses,
           });
         } else {
@@ -63,6 +64,7 @@ class Actions {
             block,
             event,
             index,
+            progress,
             responses,
           });
           responses[action.id] = response;
@@ -77,15 +79,22 @@ class Actions {
     }
   }
 
-  async callActions({ actions, arrayIndices, block, catchActions, event, eventName }) {
+  async callActions({ actions, arrayIndices, block, catchActions, event, eventName, progress }) {
     const startTimestamp = new Date();
     const responses = {};
     try {
-      await this.callActionLoop({ actions, arrayIndices, block, event, responses });
+      await this.callActionLoop({ actions, arrayIndices, block, event, responses, progress });
     } catch (error) {
       console.error(error);
       try {
-        await this.callActionLoop({ actions: catchActions, arrayIndices, block, event, responses });
+        await this.callActionLoop({
+          actions: catchActions,
+          arrayIndices,
+          block,
+          event,
+          responses,
+          progress,
+        });
       } catch (errorCatch) {
         console.error(errorCatch);
         return {
@@ -125,15 +134,15 @@ class Actions {
     };
   }
 
-  async callAction({ action, arrayIndices, block, event, index, responses }) {
-    if (!actions[action.type]) {
+  async callAction({ action, arrayIndices, block, event, index, progress, responses }) {
+    if (!this.actions[action.type]) {
       throw {
         error: new Error(`Invalid action type "${action.type}" at "${block.blockId}".`),
         type: action.type,
         index,
       };
     }
-    const { output: parsedAction, errors: parserErrors } = this.context.parser.parse({
+    const { output: parsedAction, errors: parserErrors } = this.context._internal.parser.parse({
       actions: responses,
       event,
       arrayIndices,
@@ -155,16 +164,23 @@ class Actions {
       status: 'loading',
     });
     try {
-      response = await actions[action.type]({
-        arrayIndices,
-        blockId: block.blockId,
-        context: this.context,
-        event,
+      response = await this.actions[action.type]({
+        globals: this.context._internal.lowdefy._internal.globals,
+        methods: getActionMethods({
+          actions: responses,
+          arrayIndices,
+          blockId: block.blockId,
+          context: this.context,
+          event,
+        }),
         params: parsedAction.params,
       });
+      if (progress) {
+        progress();
+      }
     } catch (error) {
       responses[action.id] = { error, index, type: action.type };
-      const { output: parsedMessages, errors: parserErrors } = this.context.parser.parse({
+      const { output: parsedMessages, errors: parserErrors } = this.context._internal.parser.parse({
         actions: responses,
         event,
         arrayIndices,
@@ -201,7 +217,7 @@ class Actions {
   displayMessage({ defaultMessage, duration, hideExplicitly, message, status }) {
     let close = () => undefined;
     if ((hideExplicitly && message !== false) || (!hideExplicitly && !type.isNone(message))) {
-      close = this.context.lowdefy.displayMessage({
+      close = this.context._internal.lowdefy._internal.displayMessage({
         content: type.isString(message) ? message : defaultMessage,
         duration,
         status,

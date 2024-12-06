@@ -1,4 +1,4 @@
-# Copyright 2020-2021 Lowdefy, Inc
+# Copyright 2020-2024 Lowdefy, Inc
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,6 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+# TODO: Add docs for build time operators
 
 _ref:
   path: templates/general.yaml.njk
@@ -32,15 +34,12 @@ _ref:
 
             ## Client or server operators
 
-            Some operators are only available on either the client or the server. For example, the [`_menu`](/_menu) operator is only useful on the client and is thus not included in server requests. Likewise, the [`_secret`](/_secret) operator is only available on the server for security reasons. 
+            Some operators are only available on either the client or the server. For example, the [`_menu`](/_menu) operator is only useful on the client and is thus not included in server requests. Likewise, the [`_secret`](/_secret) operator is only available on the server for security reasons.
 
             If a operator has special environment considerations, it is indicated on the individual operator documentation page. If no indication is made, the operator can be used under both environments.
 
             ##### Client only operators:
             - [_actions](/_actions)
-            - [_format](/_format)
-            - [_js](/_js)
-            - [_list_contexts](/_list_contexts)
             - [_media](/_media)
             - [_menu](/_menu)
             - [_request](/_request)
@@ -50,17 +49,19 @@ _ref:
             - [_secret](/_secret)
             - [_uuid](/_uuid)
 
-            Operators that are client side only cannot be used in `Requests` and `Connections`, and operators which are server side only cannot be used in `Blocks` and `Actions`. 
+            Operators that are client side only cannot be used in `Requests` and `Connections`, and operators which are server side only cannot be used in `Blocks` and `Actions`.
 
             ## Build time operators
 
             Besides the client and server environment, app build time is considered a third environment where special operator logic applies.
 
-            The `_ref` and `_var` operators do not work like other operators. They are evaluated while an app is being built, and can thus be used anywhere in the app configuration. They are used to split a app into multiple files, and to reuse configuration. See [`_ref`](/_ref) for more details.
+            The `_ref` and `_var` operators do not work like other operators. They are evaluated while an app is being built, and can thus be used anywhere in the app configuration. They are used to split an app into multiple files, and to reuse configuration. See [`_ref`](/_ref) for more details.
+
+            Some operators can be evaluated at build time by using the [`_build`](/_build) operator. This is useful for once-off calculations when an app is built, for example looping over a list in a reference JSON file to calculate a value at build time instead of using normal operators which re-evaluate whenever the app state changes. It can also be used to read an environment variable.
       - _ref:
           path: templates/navigation_buttons.yaml
           vars:
             previous_page_title: Events and Actions
             previous_page_id: events-and-actions
-            next_page_title: Secrets
-            next_page_id: secrets
+            next_page_title: Connections and Requests
+            next_page_id: connections-and-requests

@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -14,8 +14,11 @@
   limitations under the License.
 */
 
+import fs from 'fs';
+import path, { dirname } from 'path';
+import { fileURLToPath } from 'url';
+
 function transformer(pages) {
-  const fs = require('fs');
   const sitemapStart = `<?xml version="1.0" encoding="UTF-8"?>
   <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
 `;
@@ -27,16 +30,19 @@ function transformer(pages) {
     <url>
       <loc>https://docs.lowdefy.com/${page.id}</loc>
       <lastmod>${now.getFullYear()}-${now.getMonth() > 8 ? '' : 0}${now.getMonth() + 1}-${
-      now.getDate() > 9 ? '' : 0
-    }${now.getDate()}</lastmod>
+        now.getDate() > 9 ? '' : 0
+      }${now.getDate()}</lastmod>
     </url>
 `);
   };
 
   const sitemap = pages.reduce(addPage, sitemapStart).concat(sitemapEnd);
 
-  fs.writeFileSync('public/sitemap.xml', sitemap);
+  fs.writeFileSync(
+    path.join(dirname(fileURLToPath(import.meta.url)), '../public/sitemap.xml'),
+    sitemap
+  );
+
   return pages;
 }
-
-module.exports = transformer;
+export default transformer;

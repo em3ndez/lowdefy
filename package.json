@@ -1,6 +1,5 @@
 {
   "name": "@lowdefy/lowdefy",
-  "version": "3.23.2",
   "license": "Apache-2.0",
   "private": true,
   "description": "Lowdefy monorepo",
@@ -22,36 +21,39 @@
     "type": "git",
     "url": "https://github.com/lowdefy/lowdefy.git"
   },
-  "workspaces": [
-    "packages/*",
-    "packages/blocks/*",
-    "packages/servers/*"
-  ],
   "scripts": {
-    "build": "lerna run build",
-    "build:dev": "NODE_ENV=development lerna run build",
-    "clean": "lerna run clean",
-    "lerna:version": "lerna version --no-git-tag-version",
-    "lerna:publish": "lerna publish from-git",
-    "postversion": "yarn install",
+    "build": "pnpm -r build",
+    "build:turbo": "turbo run build",
+    "clean": "pnpm -r clean",
     "prettier": "prettier --config .prettierrc --write **/*.js",
-    "test": "lerna run test",
-    "test:ci": "yarn install --immutable --immutable-cache --check-cache && yarn build && yarn test --ignore='@lowdefy/format'"
+    "test": "pnpm -r --filter='!@lowdefy/blocks-*' --filter='!@lowdefy/plugin-aws' test",
+    "update-packages": "pnpm up -i -r --latest",
+    "app:build": "pnpm build:turbo && pnpm -r --filter=lowdefy start build --config-directory ../../app --server-directory ../servers/server-enterprise",
+    "app:dev": "pnpm build:turbo && pnpm -r --filter=lowdefy start dev --config-directory ../../app --dev-directory ../servers/server-dev",
+    "app:start": "pnpm build:turbo && pnpm -r --filter=lowdefy start start --config-directory ../../app --server-directory ../servers/server-enterprise",
+    "docs:build": "pnpm build:turbo && pnpm -r --filter=lowdefy start build --config-directory ../docs --server-directory ../servers/server-enterprise",
+    "docs:dev": "pnpm build:turbo && pnpm -r --filter=lowdefy start dev --config-directory ../docs --dev-directory ../servers/server-dev --log-level=debug",
+    "docs:start": "pnpm build:turbo && pnpm -r --filter=lowdefy start start --config-directory ../docs --server-directory ../servers/server-enterprise",
+    "web:build": "pnpm build:turbo && pnpm -r --filter=lowdefy start build --config-directory ../website --server-directory ../servers/server-enterprise",
+    "web:dev": "pnpm build:turbo && pnpm -r --filter=lowdefy start dev --config-directory ../website --dev-directory ../servers/server-dev  --log-level=debug",
+    "web:start": "pnpm build:turbo && pnpm -r --filter=lowdefy start start --config-directory ../website --server-directory ../servers/server-enterprise",
+    "start:server-community": "pnpm -r --filter='@lowdefy/server-community' start",
+    "start:server-enterprise": "pnpm -r --filter='@lowdefy/server-enterprise' start",
+    "release:version": "pnpm changeset version && pnpm install --no-frozen-lockfile",
+    "release:publish": "pnpm -r --filter=!lowdefy-vscode publish"
   },
   "devDependencies": {
-    "@yarnpkg/pnpify": "2.4.0",
-    "eslint": "7.27.0",
-    "eslint-config-prettier": "8.3.0",
-    "eslint-import-resolver-node": "0.3.4",
-    "eslint-plugin-import": "2.23.4",
-    "eslint-plugin-jsx-a11y": "6.4.1",
-    "eslint-plugin-prettier": "3.4.0",
-    "eslint-plugin-react": "7.24.0",
-    "eslint-plugin-react-hooks": "4.2.0",
-    "lerna": "4.0.0",
-    "prettier": "2.3.0"
+    "@changesets/cli": "2.26.2",
+    "eslint": "8.54.0",
+    "eslint-config-prettier": "9.0.0",
+    "eslint-import-resolver-node": "0.3.9",
+    "eslint-plugin-import": "2.29.0",
+    "eslint-plugin-jsx-a11y": "6.8.0",
+    "eslint-plugin-prettier": "5.0.1",
+    "eslint-plugin-react": "7.33.2",
+    "eslint-plugin-react-hooks": "4.6.0",
+    "prettier": "3.1.0",
+    "turbo": "1.10.16"
   },
-  "resolutions": {
-    "mongodb": "3.6.5"
-  }
+  "packageManager": "pnpm@9.4.0"
 }

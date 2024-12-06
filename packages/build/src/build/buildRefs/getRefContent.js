@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -14,13 +14,13 @@
   limitations under the License.
 */
 
-import getConfigFile from './getConfigFile';
-import parseRefContent from './parseRefContent';
-import runRefResolver from './runRefResolver';
+import getConfigFile from './getConfigFile.js';
+import parseRefContent from './parseRefContent.js';
+import runRefResolver from './runRefResolver.js';
 
 async function getRefContent({ context, refDef, referencedFrom }) {
   let content;
-  if (refDef.path === 'lowdefy.yaml') {
+  if (refDef.path === 'lowdefy.yaml' || refDef.path === 'lowdefy.yml') {
     content = await getConfigFile({ context, refDef, referencedFrom });
   } else if (refDef.resolver || context.refResolver) {
     content = await runRefResolver({ context, refDef, referencedFrom });

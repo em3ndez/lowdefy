@@ -1,4 +1,4 @@
-# Copyright 2020-2021 Lowdefy, Inc
+# Copyright 2020-2024 Lowdefy, Inc
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,13 +17,12 @@ _ref:
   vars:
     block_type: Breadcrumb
     category: display
-    schema: ../blocks/blocksAntd/src/blocks/Breadcrumb/Breadcrumb.json
+    schema: ../plugins/blocks/blocks-antd/src/blocks/Breadcrumb/schema.json
     filePath: blocks/display/Breadcrumb.yaml
     init_state_values:
       __type_block.properties.list: string[]
       __string_arr_block.properties.list:
-        - First 
+        - First
         - Second
     description_content: |
       A breadcrumb displays the current location within a hierarchy. It allows going back to states higher up in the hierarchy with provided links.
-

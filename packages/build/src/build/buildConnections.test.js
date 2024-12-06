@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -14,47 +14,94 @@
   limitations under the License.
 */
 
-import buildConnections from './buildConnections';
-import testContext from '../test/testContext';
+import buildConnections from './buildConnections.js';
+import testContext from '../test/testContext.js';
 
 const context = testContext();
 
-test('buildConnections no connections', async () => {
+test('buildConnections no connections', () => {
   const components = {};
-  const res = await buildConnections({ components, context });
+  const res = buildConnections({ components, context });
   expect(res.connections).toBe(undefined);
 });
 
-test('buildConnections connections not an array', async () => {
+test('buildConnections connections not an array', () => {
   const components = {
     connections: 'connections',
   };
-  const res = await buildConnections({ components, context });
+  const res = buildConnections({ components, context });
   expect(res).toEqual({
     connections: 'connections',
   });
 });
 
-test('buildConnections', async () => {
+test('buildConnections', () => {
   const components = {
     connections: [
       {
         id: 'connection1',
+        type: 'ConnectionType',
       },
       {
         id: 'connection2',
+        type: 'ConnectionType',
       },
     ],
   };
-  const res = await buildConnections({ components, context });
+  const res = buildConnections({ components, context });
   expect(res.connections).toEqual([
     {
       id: 'connection:connection1',
       connectionId: 'connection1',
+      type: 'ConnectionType',
     },
     {
       id: 'connection:connection2',
       connectionId: 'connection2',
+      type: 'ConnectionType',
     },
   ]);
+});
+
+test('throw on missing id', () => {
+  const components = {
+    connections: [{ type: 'ConnectionType' }],
+  };
+  expect(() => buildConnections({ components, context })).toThrow('Connection id missing.');
+});
+
+test('connection id is not a string', () => {
+  const components = {
+    connections: [{ id: 1 }],
+  };
+  expect(() => buildConnections({ components, context })).toThrow(
+    'Connection id is not a string. Received 1.'
+  );
+});
+
+test('throw on missing type', () => {
+  const components = {
+    connections: [{ id: 'connection1' }],
+  };
+  expect(() => buildConnections({ components, context })).toThrow(
+    'Connection type is not a string at connection "connection1". Received undefined.'
+  );
+});
+
+test('throw on Duplicate ids', () => {
+  const components = {
+    connections: [
+      {
+        id: 'connection1',
+        type: 'ConnectionType',
+      },
+      {
+        id: 'connection1',
+        type: 'ConnectionType',
+      },
+    ],
+  };
+  expect(() => buildConnections({ components, context })).toThrow(
+    'Duplicate connectionId "connection1".'
+  );
 });

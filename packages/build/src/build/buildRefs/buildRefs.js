@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -14,15 +14,23 @@
   limitations under the License.
 */
 
-import recursiveBuild from './recursiveBuild';
-import makeRefDefinition from './makeRefDefinition';
+import recursiveBuild from './recursiveBuild.js';
+import makeRefDefinition from './makeRefDefinition.js';
+import evaluateBuildOperators from './evaluateBuildOperators.js';
 
 async function buildRefs({ context }) {
-  return recursiveBuild({
+  const refDef = makeRefDefinition('lowdefy.yaml', null, context.refMap);
+  let components = await recursiveBuild({
     context,
-    refDef: makeRefDefinition('lowdefy.yaml'),
+    refDef,
     count: 0,
   });
+  components = await evaluateBuildOperators({
+    context,
+    input: components,
+    refDef,
+  });
+  return components ?? {};
 }
 
 export default buildRefs;

@@ -1,4 +1,4 @@
- # Copyright 2020-2021 Lowdefy, Inc
+ # Copyright 2020-2024 Lowdefy, Inc
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -35,197 +35,188 @@
     content:
       justify: space-around
       align: middle
-      gutter: 16
       blocks:
-        - id: cry_anchor
-          type: Anchor
-          visible:
-            _not:
-              _state: feedback_sent
-          layout:
-            size: auto
-          style:
-            fontSize:
-              _if:
-                test:
-                  _eq:
-                    - _state: feedback.score
-                    - cry
-                then: 48
-                else: 32
-          properties:
-            title: 😭
-          events:
-            onClick:
-              - id: resize
-                type: SetState
-                params:
-                  feedback.score: cry
-        - id: sad_anchor
-          type: Anchor
-          visible:
-            _not:
-              _state: feedback_sent
-          layout:
-            size: auto
-          style:
-            fontSize:
-              _if:
-                test:
-                  _eq:
-                    - _state: feedback.score
-                    - sad
-                then: 48
-                else: 32
-          properties:
-            title: 😟
-          events:
-            onClick:
-              - id: resize
-                type: SetState
-                params:
-                  feedback.score: sad
-        - id: smile_anchor
-          type: Anchor
-          visible:
-            _not:
-              _state: feedback_sent
-          layout:
-            size: auto
-          style:
-            fontSize:
-              _if:
-                test:
-                  _eq:
-                    - _state: feedback.score
-                    - smile
-                then: 48
-                else: 32
-          properties:
-            title: 😊
-          events:
-            onClick:
-              - id: resize
-                type: SetState
-                params:
-                  feedback.score: smile
-        - id: happy_anchor
-          type: Anchor
-          visible:
-            _not:
-              _state: feedback_sent
-          layout:
-            size: auto
-          style:
-            fontSize:
-              _if:
-                test:
-                  _eq:
-                    - _state: feedback.score
-                    - happy
-                then: 48
-                else: 32
-          properties:
-            title: 😀
-          events:
-            onClick:
-              - id: resize
-                type: SetState
-                params:
-                  feedback.score: happy
-        - id: feedback.email
-          type: TextInput
-          visible:
-            _and:
-              - _if_none:
-                  - _state: feedback.score
-                  - false
-              - _not:
-                  _state: feedback_sent
-          properties:
-            title: Email
-            placeholder: Your email address
-        - id: feedback.text
-          type: TextArea
-          visible:
-            _and:
-              - _if_none:
-                  - _state: feedback.score
-                  - false
-              - _not:
-                  _state: feedback_sent
-          properties:
-            title: Feedback
-            rows: 5
-            placeholder:
-              _if:
-                test:
-                  _or:
-                    - _eq:
-                        - _state: feedback.score
-                        - happy
-                    - _eq:
-                        - _state: feedback.score
-                        - smile
-                then: What made you smile?
-                else: How can we improve?
-        - id: fb_box
+        - id: feedback_box
           type: Box
-          visible:
-            _and:
-              - _if_none:
-                  - _state: feedback.score
-                  - false
-              - _not:
-                  _state: feedback_sent
           layout:
-            contentJustify: end
+            contentGutter: 16
+            contentJustify: space-around
+            contentAlign: middle
+          visible:
+            _not:
+              _state: feedback_sent
           blocks:
-            - id: feedback.send
-              type: Button
-              requests:
-                - id: lowdefy_api_feedback
-                  type: AxiosHttp
-                  connectionId: lowdefy_api_marketing
-                  properties:
-                    data:
-                      text:
-                        _state: feedback.text
-                      score:
-                        _state: feedback.score
-                      email:
-                        _state: feedback.email
-                      source: docs
-                      type: Docs feedback
-                      page_id:
-                        _var: pageId
-                - id: discord_channel_feedback
-                  type: AxiosHttp
-                  connectionId: discord_channel
-                  properties:
-                    data:
-                      content:
-                        _nunjucks:
-                          template: 'Docs feedback: {{ text }}'
-                          on:
-                            _state: feedback
+            - id: cry_box
+              type: Box
               layout:
                 size: auto
+              style:
+                fontSize:
+                  _if:
+                    test:
+                      _eq:
+                        - _state: feedback.score
+                        - 0
+                    then: 48
+                    else: 32
               properties:
-                title: Send
-                icon: SendOutlined
-                color: '#1890ff'
+                content: 😭
               events:
                 onClick:
-                  - id: post_data
-                    type: Request
-                    params:
-                      - lowdefy_api_feedback
-                      - discord_channel_feedback
-                  - id: set_feedback
+                  - id: resize
                     type: SetState
                     params:
-                      feedback_sent: true
+                      feedback.score: 0
+            - id: sad_box
+              type: Box
+              visible:
+                _not:
+                  _state: feedback_sent
+              layout:
+                size: auto
+              style:
+                fontSize:
+                  _if:
+                    test:
+                      _eq:
+                        - _state: feedback.score
+                        - 0.333
+                    then: 48
+                    else: 32
+              properties:
+                content: 😟
+              events:
+                onClick:
+                  - id: resize
+                    type: SetState
+                    params:
+                      feedback.score: 0.333
+            - id: smile_box
+              type: Box
+              visible:
+                _not:
+                  _state: feedback_sent
+              layout:
+                size: auto
+              style:
+                fontSize:
+                  _if:
+                    test:
+                      _eq:
+                        - _state: feedback.score
+                        - 0.666
+                    then: 48
+                    else: 32
+              properties:
+                content: 😊
+              events:
+                onClick:
+                  - id: resize
+                    type: SetState
+                    params:
+                      feedback.score: 0.666
+            - id: happy_box
+              type: Box
+              visible:
+                _not:
+                  _state: feedback_sent
+              layout:
+                size: auto
+              style:
+                fontSize:
+                  _if:
+                    test:
+                      _eq:
+                        - _state: feedback.score
+                        - 1
+                    then: 48
+                    else: 32
+              properties:
+                content: 😀
+              events:
+                onClick:
+                  - id: resize
+                    type: SetState
+                    params:
+                      feedback.score: 1
+            - id: feedback_input
+              type: Box
+              visible:
+                _ne:
+                  - _state: feedback.score
+                  - null
+              layout:
+                contentGutter: 16
+                contentJustify: space-around
+                contentAlign: middle
+              blocks:
+                - id: feedback.email
+                  type: TextInput
+                  validate:
+                    _ref: templates/validate_email.yaml
+                  properties:
+                    title: Email
+                    placeholder: Your email address
+                - id: feedback.text
+                  type: TextArea
+                  properties:
+                    title: Feedback
+                    rows: 5
+                    placeholder:
+                      _if:
+                        test:
+                          _or:
+                            - _eq:
+                                - _state: feedback.score
+                                - 0.666
+                            - _eq:
+                                - _state: feedback.score
+                                - 1
+                        then: What made you smile?
+                        else: How can we improve?
+                - id: fb_box
+                  type: Box
+                  layout:
+                    contentJustify: end
+                  blocks:
+                    - id: feedback.send
+                      type: Button
+                      requests:
+                        - _ref: requests/insert_feedback.yaml
+                        - _ref:
+                            path: requests/discord_message.yaml.njk
+                            vars:
+                              key: feedback
+                              message:
+                                  _nunjucks:
+                                    template: |
+                                      {% raw %}
+                                      Docs feedback: {{ feedback.score }} - {{ feedback.text }}
+                                      {% endraw %}
+                                    on:
+                                        feedback:
+                                          _state: feedback
+                      layout:
+                        size: auto
+                      properties:
+                        title: Send
+                        icon: AiOutlineSend
+                        color: '#1990FF'
+                      events:
+                        onClick:
+                          - id: validate
+                            type: Validate
+                            params:
+                              regex: ^feedback
+                          - id: post_data
+                            type: Request
+                            params:
+                              - insert_feedback
+                              - discord_message_feedback
+                          - id: set_feedback
+                            type: SetState
+                            params:
+                              feedback_sent: true
         - id: feedback_sent_thank_you
           type: Alert
           visible:
@@ -250,7 +241,7 @@
         size: auto
       properties:
         title: Edit this page on Github
-        href: https://github.com/lowdefy/lowdefy/blob/main/packages/docs/{{ filePath }}
+        url: https://github.com/lowdefy/lowdefy/blob/main/packages/docs/{{ filePath }}
         newTab: true
 {% endif %}
 
@@ -258,6 +249,7 @@
 
 - id: footer_divider
   type: Divider
+- _ref: templates/built_with_lowdefy.yaml
 - id: footer_box
   type: Box
   layout:
@@ -283,7 +275,7 @@
           type: Html
           properties:
             html: |
-              <p><a href="https://lowdefy.com"><img src="/public/logo-light-theme.png" width="126px" /></a></p>
+              <p><a href="https://lowdefy.com"><img src="/logo-light-theme.png" width="126px" /></a></p>
               <p style="font-size: 0.85rem;" >Build internal tools with YAML.</p>
               <p><a href="mailto:hello@lowdefy.com">hello@lowdefy.com</a></p>
         - id: community_links
@@ -297,7 +289,7 @@
               layout:
                 size: auto
               properties:
-                name: TwitterOutlined
+                name: AiOutlineTwitter
                 size: 24
               events:
                 onClick:
@@ -310,7 +302,7 @@
               layout:
                 size: auto
               properties:
-                name: CommentOutlined
+                name: AiOutlineComment
                 size: 24
               events:
                 onClick:
@@ -348,7 +340,7 @@
               layout:
                 size: auto
               properties:
-                name: GithubOutlined
+                name: AiOutlineGithub
                 size: 24
               events:
                 onClick:
@@ -361,7 +353,7 @@
               layout:
                 size: auto
               properties:
-                name: YoutubeOutlined
+                name: AiOutlineYoutube
                 size: 24
               events:
                 onClick:
@@ -385,7 +377,7 @@
           properties:
             content: Subscribe to our newsletter
             level: 3
-            color: '#1890ff'
+            color: '#1990FF'
         - id: footer_cta_paragraph
           type: Paragraph
           visible:
@@ -401,13 +393,15 @@
             contentGutter: [12, 0]
             contentJustify: center
           blocks:
-            - id: footer_cta_input
+            - id: email
               type: TextInput
               visible:
                 _not:
                   _global: newsletter_subscribed
               layout:
                 flex: 0 1 250px
+              validate:
+                _ref: templates/validate_email.yaml
               properties:
                 size: large
                 placeholder: Enter your email
@@ -419,36 +413,29 @@
                 _not:
                   _global: newsletter_subscribed
               requests:
-                - id: lowdefy_api_subscribe
-                  type: AxiosHttp
-                  connectionId: lowdefy_api_marketing
-                  properties:
-                    data:
-                      type: Newsletter subscription
-                      email:
-                        _state: footer_cta_input
-                      source: docs
-                      page_id:
-                        _var: pageId
-                - id: discord_channel_subscribe
-                  type: AxiosHttp
-                  connectionId: discord_channel
-                  properties:
-                    data:
-                      content: 'New newsletter subscription from docs'
+                - _ref: requests/insert_newsletter.yaml
+                - _ref:
+                    path: requests/discord_message.yaml.njk
+                    vars:
+                      key: newsletter
+                      message: 'New newsletter subscription from docs'
               layout:
                 flex: 0 1 auto
               properties:
                 title: Subscribe
-                color: '#1890ff'
                 size: large
               events:
                 onClick:
+                  - id: validate
+                    type: Validate
+                    params: email
                   - id: post_data
                     type: Request
                     params:
-                      - lowdefy_api_subscribe
-                      - discord_channel_subscribe
+                      - insert_newsletter
+                      - discord_message_newsletter
+                    messages:
+                      success: Thanks for subscribing!
                   - id: set_subscribed
                     type: SetGlobal
                     params:
@@ -470,47 +457,35 @@
         span: 6
         contentGutter: 8
       blocks:
-        - id: why_anchor
-          type: Anchor
-          properties:
-            title: Why Lowdefy
-            href: https://lowdefy.com
-            ref: 'noopener'
-        - id: tutorial_anchor
-          type: Anchor
-          properties:
-            title: Quick Start Tutorial
-            href: /tutorial-development-server
-            rel: 'noopener'
-        - id: netlify_anchor
-          type: Anchor
-          properties:
-            title: Deploy to Netlify
-            href: /tutorial-start
-            rel: 'noopener'
-        - id: concepts_anchor
-          type: Anchor
-          properties:
-            title: How Lowdefy Works
-            href: /overview
-            rel: 'noopener'
         - id: github_anchor
           type: Anchor
           properties:
-            title: Github Repository
-            href: https://github.com/lowdefy/lowdefy
+            title: Github
+            url: https://github.com/lowdefy
             newTab: true
         - id: changelog_anchor
           type: Anchor
           properties:
-            title: Version Changelog
-            href: https://github.com/lowdefy/lowdefy/blob/main/CHANGELOG.md
+            title: Changelog
+            url: https://github.com/lowdefy/lowdefy/releases
             newTab: true
-        - id: license_anchor
+        - id: licenses_anchor
           type: Anchor
           properties:
-            title: Apache-2.0 License
-            href: https://github.com/lowdefy/lowdefy/blob/main/LICENSE
+            title: Licenses
+            url: https://docs.lowdefy.com/licenses
+            newTab: true
+        - id: terms_anchor
+          type: Anchor
+          properties:
+            title: Terms
+            url: https://lowdefy.com/terms
+            newTab: true
+        - id: privacy_policy_anchor
+          type: Anchor
+          properties:
+            title: Privacy Policy
+            url: https://lowdefy.com/privacy-policy
             newTab: true
     - id: footer_logo_box_sm
       type: Box
@@ -529,7 +504,7 @@
           type: Html
           properties:
             html: |
-              <p style="text-align: center;"><a href="https://lowdefy.com" ref="noopener"><img src="/public/logo-light-theme.png" width="126px" /></a></p>
+              <p style="text-align: center;"><a href="https://lowdefy.com" ref="noopener"><img src="/logo-light-theme.png" width="126px" /></a></p>
               <p style="text-align: center; font-size: 0.85rem;" >Build internal tools with YAML.</p>
               <p style="text-align: center;"><a href="mailto:hello@lowdefy.com">hello@lowdefy.com</a></p>
         - id: community_links
@@ -543,7 +518,7 @@
               layout:
                 size: auto
               properties:
-                name: TwitterOutlined
+                name: AiOutlineTwitter
                 size: 24
               events:
                 onClick:
@@ -557,7 +532,7 @@
               layout:
                 size: auto
               properties:
-                name: CommentOutlined
+                name: AiOutlineComment
                 size: 24
               events:
                 onClick:
@@ -571,7 +546,7 @@
               layout:
                 size: auto
               properties:
-                name: GithubOutlined
+                name: AiOutlineGithub
                 size: 24
               events:
                 onClick:
@@ -585,7 +560,7 @@
               layout:
                 size: auto
               properties:
-                name: YoutubeOutlined
+                name: AiOutlineYoutube
                 size: 24
               events:
                 onClick:
@@ -601,4 +576,4 @@
           type: Html
           properties:
             html: |
-              <div style="text-align: center; font-size: 12px; margin-top: 42px;">© 2021 Lowdefy, Inc. - Give. Easy. Value.</div>
+              <div style="text-align: center; font-size: 12px; margin-top: 42px;">© 2023 Lowdefy, Inc. - Give. Easy. Value.</div>

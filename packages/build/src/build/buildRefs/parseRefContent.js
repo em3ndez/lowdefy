@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -14,12 +14,14 @@
   limitations under the License.
 */
 
+/* eslint-disable no-param-reassign */
+
 import { type } from '@lowdefy/helpers';
 import { getFileExtension, getFileSubExtension } from '@lowdefy/node-utils';
 import JSON5 from 'json5';
-import YAML from 'js-yaml';
+import YAML from 'yaml';
 
-import parseNunjucks from './parseNunjucks';
+import parseNunjucks from './parseNunjucks.js';
 
 function parseRefContent({ content, refDef }) {
   const { path, vars } = refDef;
@@ -31,12 +33,13 @@ function parseRefContent({ content, refDef }) {
     }
 
     if (ext === 'yaml' || ext === 'yml') {
-      return YAML.load(content);
+      content = YAML.parse(content);
     }
     if (ext === 'json') {
-      return JSON5.parse(content);
+      content = JSON5.parse(content);
     }
   }
+
   return content;
 }
 

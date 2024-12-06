@@ -1,7 +1,7 @@
 /* eslint-disable dot-notation */
 
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,277 +15,160 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
+import { jest } from '@jest/globals';
 
 import { serializer } from '@lowdefy/helpers';
-import { WebParser } from '@lowdefy/operators';
 
-import Blocks from '../../src/Blocks';
-import State from '../../src/State';
-
-import testContext from '../testContext';
+import testContext from '../testContext.js';
 
 const pageId = 'one';
-const lowdefy = { pageId };
+const lowdefy = { pageId, _internal: {} };
 
-test('set block to init', async () => {
-  const rootBlock = {
-    blockId: 'root',
-    meta: {
-      category: 'context',
+test('init blocks and SetState to set value to block', async () => {
+  const pageConfig = {
+    id: 'root',
+    type: 'Box',
+    events: {
+      onInit: [
+        {
+          id: 'initState',
+          type: 'SetState',
+          params: { textInput: 'init' },
+        },
+      ],
     },
-    areas: {
-      content: {
-        blocks: [
-          {
-            type: 'TextInput',
-            blockId: 'textInput',
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-        ],
+    blocks: [
+      {
+        type: 'TextInput',
+        id: 'textInput',
       },
-    },
+    ],
   };
   const context = await testContext({
     lowdefy,
-    rootBlock,
-    initState: { textInput: 'init' },
+    pageConfig,
   });
-  const { textInput } = context.RootBlocks.map;
+  const { textInput } = context._internal.RootBlocks.map;
 
-  expect(textInput.value).toEqual('init');
   expect(context.state).toEqual({ textInput: 'init' });
+  expect(textInput.value).toEqual('init');
 });
 
-// can't use testContext
 test('Blocks to init with no blocks passed', async () => {
-  const context = {
-    lowdefy: { pageId },
-    operators: [],
-    state: { a: 'a' },
-    update: jest.fn(),
-    updateBlock: jest.fn(),
+  const pageConfig = {
+    id: 'root',
+    type: 'Box',
   };
-  context.State = new State(context);
-  context.parser = new WebParser({ context, contexts: {} });
-  await context.parser.init();
-  context.RootBlocks = new Blocks({
-    context,
-    arrayIndices: [],
+  const context = await testContext({
+    lowdefy,
+    pageConfig,
   });
-  context.RootBlocks.init();
-  context.RootBlocks.update();
-  expect(context.state).toEqual({ a: 'a' });
-});
-
-// can't use testContext
-test('Blocks to init with arrayIndices not an array', async () => {
-  const context = {
-    lowdefy: {
-      pageId,
-      updateBlock: jest.fn(),
-    },
-    operators: [],
-    update: jest.fn(),
-  };
-  context.State = new State(context);
-  context.parser = new WebParser({ context, contexts: {} });
-  await context.parser.init();
-  const rootBlock = {
-    blockId: 'root',
-    meta: {
-      category: 'context',
-    },
-    areas: {
-      content: {
-        blocks: [
-          {
-            type: 'TextInput',
-            blockId: 'textInput',
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-        ],
-      },
-    },
-  };
-  context.RootBlocks = new Blocks({
-    areas: { content: { blocks: [rootBlock] } },
-    context,
-    arrayIndices: 1,
-  });
-  context.RootBlocks.init();
-  context.RootBlocks.update();
-  expect(context.RootBlocks).toBeDefined();
-});
-
-// can't use testContext
-test('Blocks to init with undefined arrayIndices', async () => {
-  const context = {
-    lowdefy: {
-      pageId,
-      updateBlock: jest.fn(),
-    },
-    operators: [],
-    update: jest.fn(),
-  };
-  context.State = new State(context);
-  context.parser = new WebParser({ context, contexts: {} });
-  await context.parser.init();
-  const rootBlock = {
-    blockId: 'root',
-    meta: {
-      category: 'context',
-    },
-    areas: {
-      content: {
-        blocks: [
-          {
-            type: 'TextInput',
-            blockId: 'textInput',
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-        ],
-      },
-    },
-  };
-  context.RootBlocks = new Blocks({
-    areas: { content: { blocks: [rootBlock] } },
-    context,
-  });
-  context.RootBlocks.init();
-  context.RootBlocks.update();
-  expect(context.RootBlocks).toBeDefined();
+  expect(context._internal.RootBlocks.context.pageId).toEqual('root');
 });
 
 test('set block enforceType value no init', async () => {
-  const rootBlock = {
-    blockId: 'root',
-    meta: {
-      category: 'context',
-    },
-    areas: {
-      content: {
-        blocks: [
-          {
-            type: 'MultipleSelector',
-            blockId: 'selector',
-            meta: {
-              category: 'input',
-              valueType: 'array',
-            },
-          },
-        ],
+  const pageConfig = {
+    id: 'root',
+    type: 'Box',
+    blocks: [
+      {
+        type: 'MultipleSelector',
+        id: 'selector',
       },
-    },
+    ],
   };
   const context = await testContext({
     lowdefy,
-    rootBlock,
+    pageConfig,
   });
-  const { selector } = context.RootBlocks.map;
+  const { selector } = context._internal.RootBlocks.map;
   expect(selector.value).toEqual([]);
   expect(context.state).toEqual({ selector: [] });
 });
 
 test('set block value to initValue in meta', async () => {
-  const rootBlock = {
-    blockId: 'root',
-    meta: {
-      category: 'context',
-    },
-    areas: {
-      content: {
-        blocks: [
-          {
-            type: 'ObjectBlock',
-            blockId: 'object_one',
-            meta: {
-              category: 'input',
-              valueType: 'object',
-              initValue: {
-                a: 1,
-              },
-            },
-          },
-        ],
+  const pageConfig = {
+    id: 'root',
+    type: 'Box',
+    blocks: [
+      {
+        type: 'ObjectBlock',
+        id: 'object_one',
+      },
+    ],
+  };
+  lowdefy._internal.blocks = {
+    ObjectBlock: {
+      meta: {
+        category: 'input',
+        valueType: 'object',
+        initValue: {
+          a: 1,
+        },
       },
     },
   };
   const context = await testContext({
     lowdefy,
-    rootBlock,
+    pageConfig,
   });
-  const { object_one } = context.RootBlocks.map;
+  const { object_one } = context._internal.RootBlocks.map;
   expect(object_one.value).toEqual({ a: 1 });
   expect(context.state).toEqual({ object_one: { a: 1 } });
 });
 
 test('Reset to change blocks back to initState', async () => {
-  const rootBlock = {
-    blockId: 'root',
-    meta: {
-      category: 'context',
+  const pageConfig = {
+    id: 'root',
+    type: 'Box',
+    events: {
+      onInit: [
+        {
+          id: 'init',
+          type: 'SetState',
+          params: { b: 'b' },
+        },
+      ],
     },
-    areas: {
-      content: {
-        blocks: [
-          {
-            type: 'TextInput',
-            blockId: 'textInput',
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-        ],
+    blocks: [
+      {
+        type: 'TextInput',
+        id: 'textInput',
       },
-    },
+    ],
   };
   const context = await testContext({
     lowdefy,
-    rootBlock,
-    initState: { b: 'b' },
+    pageConfig,
   });
-  const { textInput } = context.RootBlocks.map;
+  const { textInput } = context._internal.RootBlocks.map;
   expect(textInput.value).toEqual(null);
   expect(context.state).toEqual({ b: 'b', textInput: null });
   textInput.setValue('new');
   expect(textInput.value).toEqual('new');
   expect(context.state).toEqual({ textInput: 'new', b: 'b' });
   // Reset action sequence
-  context.State.resetState();
-  context.RootBlocks.reset(serializer.deserializeFromString(context.State.frozenState));
-  context.update();
+  context._internal.State.resetState();
+  context._internal.RootBlocks.reset(
+    serializer.deserializeFromString(context._internal.State.frozenState)
+  );
+  context._internal.update();
   // ----
   expect(textInput.value).toEqual(null);
   expect(context.state).toEqual({ textInput: null, b: 'b' });
 });
 
 test('state should not have value if block is not visible', async () => {
-  const rootBlock = {
-    blockId: 'root',
-    meta: {
-      category: 'context',
-    },
+  const pageConfig = {
+    id: 'root',
+    type: 'Box',
     areas: {
       content: {
         blocks: [
           {
             type: 'TextInput',
-            blockId: 'textInput',
+            id: 'textInput',
             visible: false,
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
           },
         ],
       },
@@ -293,170 +176,116 @@ test('state should not have value if block is not visible', async () => {
   };
   const context = await testContext({
     lowdefy,
-    rootBlock,
+    pageConfig,
   });
-  const { textInput } = context.RootBlocks.map;
+  const { textInput } = context._internal.RootBlocks.map;
   expect(textInput.value).toBe(null);
   expect(context.state).toEqual({});
 });
 
 test('block should only not be visible when visible === false', async () => {
-  const rootBlock = {
-    blockId: 'root',
-    meta: {
-      category: 'context',
+  const pageConfig = {
+    id: 'root',
+    type: 'Box',
+    events: {
+      onInit: [
+        {
+          id: 'init',
+          type: 'SetState',
+          params: {
+            a: 'a',
+            b: 'b',
+            c: 'c',
+            d: 'd',
+            e: 'e',
+            f: 'f',
+            g: 'g',
+            h: 'h',
+            i: 'i',
+            j: 'j',
+            k: 'k',
+            l: 'l',
+            m: 'm',
+            n: 'n',
+          },
+        },
+      ],
     },
-    areas: {
-      content: {
-        blocks: [
-          {
-            type: 'TextInput',
-            blockId: 'a',
-            visible: false,
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-          {
-            type: 'TextInput',
-            blockId: 'b',
-            visible: true,
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-          {
-            type: 'TextInput',
-            blockId: 'c',
-            visible: 0,
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-          {
-            type: 'TextInput',
-            blockId: 'd',
-            visible: 1,
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-          {
-            type: 'TextInput',
-            blockId: 'e',
-            visible: 42,
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-          {
-            type: 'TextInput',
-            blockId: 'f',
-            visible: '',
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-          {
-            type: 'TextInput',
-            blockId: 'g',
-            visible: 'hello',
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-          {
-            type: 'TextInput',
-            blockId: 'h',
-            visible: [],
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-          {
-            type: 'TextInput',
-            blockId: 'i',
-            visible: ['a'],
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-          {
-            type: 'TextInput',
-            blockId: 'j',
-            visible: {},
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-          {
-            type: 'TextInput',
-            blockId: 'k',
-            visible: { k: 'k' },
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-          {
-            type: 'TextInput',
-            blockId: 'l',
-            visible: null,
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-          {
-            type: 'TextInput',
-            blockId: 'm',
-            visible: undefined,
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-          {
-            type: 'TextInput',
-            blockId: 'n',
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-        ],
+    blocks: [
+      {
+        type: 'TextInput',
+        id: 'a',
+        visible: false,
       },
-    },
+      {
+        type: 'TextInput',
+        id: 'b',
+        visible: true,
+      },
+      {
+        type: 'TextInput',
+        id: 'c',
+        visible: 0,
+      },
+      {
+        type: 'TextInput',
+        id: 'd',
+        visible: 1,
+      },
+      {
+        type: 'TextInput',
+        id: 'e',
+        visible: 42,
+      },
+      {
+        type: 'TextInput',
+        id: 'f',
+        visible: '',
+      },
+      {
+        type: 'TextInput',
+        id: 'g',
+        visible: 'hello',
+      },
+      {
+        type: 'TextInput',
+        id: 'h',
+        visible: [],
+      },
+      {
+        type: 'TextInput',
+        id: 'i',
+        visible: ['a'],
+      },
+      {
+        type: 'TextInput',
+        id: 'j',
+        visible: {},
+      },
+      {
+        type: 'TextInput',
+        id: 'k',
+        visible: { k: 'k' },
+      },
+      {
+        type: 'TextInput',
+        id: 'l',
+        visible: null,
+      },
+      {
+        type: 'TextInput',
+        id: 'm',
+        visible: undefined,
+      },
+      {
+        type: 'TextInput',
+        id: 'n',
+      },
+    ],
   };
   const context = await testContext({
     lowdefy,
-    rootBlock,
-    initState: {
-      a: 'a',
-      b: 'b',
-      c: 'c',
-      d: 'd',
-      e: 'e',
-      f: 'f',
-      g: 'g',
-      h: 'h',
-      i: 'i',
-      j: 'j',
-      k: 'k',
-      l: 'l',
-      m: 'm',
-      n: 'n',
-    },
+    pageConfig,
   });
   expect(context.state).toEqual({
     b: 'b',
@@ -476,276 +305,216 @@ test('block should only not be visible when visible === false', async () => {
 });
 
 test('block should only not be evaluated when visible === false', async () => {
-  const rootBlock = {
-    blockId: 'root',
-    meta: {
-      category: 'context',
+  const pageConfig = {
+    id: 'root',
+    type: 'Box',
+    events: {
+      onInit: [
+        {
+          id: 'init',
+          type: 'SetState',
+          params: {
+            title: 'test',
+            a: 'a',
+            b: 'b',
+            c: 'c',
+            d: 'd',
+            e: 'e',
+            f: 'f',
+            g: 'g',
+            h: 'h',
+            i: 'i',
+            j: 'j',
+            k: 'k',
+            l: 'l',
+            m: 'm',
+            n: 'n',
+          },
+        },
+      ],
     },
-    areas: {
-      content: {
-        blocks: [
-          {
-            type: 'TextInput',
-            blockId: 'a',
-            visible: false,
-            properties: {
-              title: {
-                _state: 'title',
-              },
-            },
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
+    blocks: [
+      {
+        type: 'TextInput',
+        id: 'a',
+        visible: false,
+        properties: {
+          title: {
+            _state: 'title',
           },
-          {
-            type: 'TextInput',
-            blockId: 'b',
-            visible: true,
-            properties: {
-              title: {
-                _state: 'title',
-              },
-            },
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-          {
-            type: 'TextInput',
-            blockId: 'c',
-            visible: 0,
-            properties: {
-              title: {
-                _state: 'title',
-              },
-            },
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-          {
-            type: 'TextInput',
-            blockId: 'd',
-            visible: 1,
-            properties: {
-              title: {
-                _state: 'title',
-              },
-            },
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-          {
-            type: 'TextInput',
-            blockId: 'e',
-            visible: 42,
-            properties: {
-              title: {
-                _state: 'title',
-              },
-            },
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-          {
-            type: 'TextInput',
-            blockId: 'f',
-            visible: '',
-            properties: {
-              title: {
-                _state: 'title',
-              },
-            },
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-          {
-            type: 'TextInput',
-            blockId: 'g',
-            visible: 'hello',
-            properties: {
-              title: {
-                _state: 'title',
-              },
-            },
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-          {
-            type: 'TextInput',
-            blockId: 'h',
-            visible: [],
-            properties: {
-              title: {
-                _state: 'title',
-              },
-            },
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-          {
-            type: 'TextInput',
-            blockId: 'i',
-            visible: ['a'],
-            properties: {
-              title: {
-                _state: 'title',
-              },
-            },
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-          {
-            type: 'TextInput',
-            blockId: 'j',
-            visible: {},
-            properties: {
-              title: {
-                _state: 'title',
-              },
-            },
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-          {
-            type: 'TextInput',
-            blockId: 'k',
-            visible: { k: 'k' },
-            properties: {
-              title: {
-                _state: 'title',
-              },
-            },
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-          {
-            type: 'TextInput',
-            blockId: 'l',
-            visible: null,
-            properties: {
-              title: {
-                _state: 'title',
-              },
-            },
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-          {
-            type: 'TextInput',
-            blockId: 'm',
-            visible: undefined,
-            properties: {
-              title: {
-                _state: 'title',
-              },
-            },
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-          {
-            type: 'TextInput',
-            blockId: 'n',
-            properties: {
-              title: {
-                _state: 'title',
-              },
-            },
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-        ],
+        },
       },
-    },
+      {
+        type: 'TextInput',
+        id: 'b',
+        visible: true,
+        properties: {
+          title: {
+            _state: 'title',
+          },
+        },
+      },
+      {
+        type: 'TextInput',
+        id: 'c',
+        visible: 0,
+        properties: {
+          title: {
+            _state: 'title',
+          },
+        },
+      },
+      {
+        type: 'TextInput',
+        id: 'd',
+        visible: 1,
+        properties: {
+          title: {
+            _state: 'title',
+          },
+        },
+      },
+      {
+        type: 'TextInput',
+        id: 'e',
+        visible: 42,
+        properties: {
+          title: {
+            _state: 'title',
+          },
+        },
+      },
+      {
+        type: 'TextInput',
+        id: 'f',
+        visible: '',
+        properties: {
+          title: {
+            _state: 'title',
+          },
+        },
+      },
+      {
+        type: 'TextInput',
+        id: 'g',
+        visible: 'hello',
+        properties: {
+          title: {
+            _state: 'title',
+          },
+        },
+      },
+      {
+        type: 'TextInput',
+        id: 'h',
+        visible: [],
+        properties: {
+          title: {
+            _state: 'title',
+          },
+        },
+      },
+      {
+        type: 'TextInput',
+        id: 'i',
+        visible: ['a'],
+        properties: {
+          title: {
+            _state: 'title',
+          },
+        },
+      },
+      {
+        type: 'TextInput',
+        id: 'j',
+        visible: {},
+        properties: {
+          title: {
+            _state: 'title',
+          },
+        },
+        meta: {
+          category: 'input',
+          valueType: 'string',
+        },
+      },
+      {
+        type: 'TextInput',
+        id: 'k',
+        visible: { k: 'k' },
+        properties: {
+          title: {
+            _state: 'title',
+          },
+        },
+      },
+      {
+        type: 'TextInput',
+        id: 'l',
+        visible: null,
+        properties: {
+          title: {
+            _state: 'title',
+          },
+        },
+      },
+      {
+        type: 'TextInput',
+        id: 'm',
+        visible: undefined,
+        properties: {
+          title: {
+            _state: 'title',
+          },
+        },
+      },
+      {
+        type: 'TextInput',
+        id: 'n',
+        properties: {
+          title: {
+            _state: 'title',
+          },
+        },
+      },
+    ],
   };
   const context = await testContext({
     lowdefy,
-    rootBlock,
-    initState: {
-      title: 'test',
-      a: 'a',
-      b: 'b',
-      c: 'c',
-      d: 'd',
-      e: 'e',
-      f: 'f',
-      g: 'g',
-      h: 'h',
-      i: 'i',
-      j: 'j',
-      k: 'k',
-      l: 'l',
-      m: 'm',
-      n: 'n',
-    },
+    pageConfig,
   });
-  expect(context.RootBlocks.map.a.eval.properties).toEqual();
-  expect(context.RootBlocks.map.b.eval.properties).toEqual({ title: 'test' });
-  expect(context.RootBlocks.map.c.eval.properties).toEqual({ title: 'test' });
-  expect(context.RootBlocks.map.d.eval.properties).toEqual({ title: 'test' });
-  expect(context.RootBlocks.map.e.eval.properties).toEqual({ title: 'test' });
-  expect(context.RootBlocks.map.f.eval.properties).toEqual({ title: 'test' });
-  expect(context.RootBlocks.map.g.eval.properties).toEqual({ title: 'test' });
-  expect(context.RootBlocks.map.h.eval.properties).toEqual({ title: 'test' });
-  expect(context.RootBlocks.map.i.eval.properties).toEqual({ title: 'test' });
-  expect(context.RootBlocks.map.j.eval.properties).toEqual({ title: 'test' });
-  expect(context.RootBlocks.map.k.eval.properties).toEqual({ title: 'test' });
-  expect(context.RootBlocks.map.l.eval.properties).toEqual({ title: 'test' });
-  expect(context.RootBlocks.map.m.eval.properties).toEqual({ title: 'test' });
-  expect(context.RootBlocks.map.n.eval.properties).toEqual({ title: 'test' });
+  expect(context._internal.RootBlocks.map.a.eval.properties).toEqual();
+  expect(context._internal.RootBlocks.map.b.eval.properties).toEqual({ title: 'test' });
+  expect(context._internal.RootBlocks.map.c.eval.properties).toEqual({ title: 'test' });
+  expect(context._internal.RootBlocks.map.d.eval.properties).toEqual({ title: 'test' });
+  expect(context._internal.RootBlocks.map.e.eval.properties).toEqual({ title: 'test' });
+  expect(context._internal.RootBlocks.map.f.eval.properties).toEqual({ title: 'test' });
+  expect(context._internal.RootBlocks.map.g.eval.properties).toEqual({ title: 'test' });
+  expect(context._internal.RootBlocks.map.h.eval.properties).toEqual({ title: 'test' });
+  expect(context._internal.RootBlocks.map.i.eval.properties).toEqual({ title: 'test' });
+  expect(context._internal.RootBlocks.map.j.eval.properties).toEqual({ title: 'test' });
+  expect(context._internal.RootBlocks.map.k.eval.properties).toEqual({ title: 'test' });
+  expect(context._internal.RootBlocks.map.l.eval.properties).toEqual({ title: 'test' });
+  expect(context._internal.RootBlocks.map.m.eval.properties).toEqual({ title: 'test' });
+  expect(context._internal.RootBlocks.map.n.eval.properties).toEqual({ title: 'test' });
 });
 
 test('set value from block', async () => {
-  const rootBlock = {
-    blockId: 'root',
-    meta: {
-      category: 'context',
-    },
-    areas: {
-      content: {
-        blocks: [
-          {
-            type: 'SwitchInput',
-            blockId: 'swtch',
-            meta: {
-              category: 'input',
-              valueType: 'boolean',
-            },
-          },
-        ],
+  const pageConfig = {
+    id: 'root',
+    type: 'Box',
+    blocks: [
+      {
+        type: 'Switch',
+        id: 'swtch',
       },
-    },
+    ],
   };
   const context = await testContext({
     lowdefy,
-    rootBlock,
+    pageConfig,
   });
-  const { swtch } = context.RootBlocks.map;
+  const { swtch } = context._internal.RootBlocks.map;
 
   expect(swtch.value).toBe(false);
   expect(context.state).toEqual({ swtch: false });
@@ -756,31 +525,21 @@ test('set value from block', async () => {
 });
 
 test('set value from block in nested object', async () => {
-  const rootBlock = {
-    blockId: 'root',
-    meta: {
-      category: 'context',
-    },
-    areas: {
-      content: {
-        blocks: [
-          {
-            type: 'TextInput',
-            blockId: 'a.b.c',
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-        ],
+  const pageConfig = {
+    id: 'root',
+    type: 'Box',
+    blocks: [
+      {
+        type: 'TextInput',
+        id: 'a.b.c',
       },
-    },
+    ],
   };
   const context = await testContext({
     lowdefy,
-    rootBlock,
+    pageConfig,
   });
-  const block = context.RootBlocks.map['a.b.c'];
+  const block = context._internal.RootBlocks.map['a.b.c'];
 
   expect(block.value).toBe(null);
   expect(context.state).toEqual({ a: { b: { c: null } } });
@@ -791,32 +550,30 @@ test('set value from block in nested object', async () => {
 });
 
 test('set value from block with type enforceType', async () => {
-  const rootBlock = {
-    blockId: 'root',
-    meta: {
-      category: 'context',
+  const pageConfig = {
+    id: 'root',
+    type: 'Box',
+    events: {
+      onInit: [
+        {
+          id: 'init',
+          type: 'SetState',
+          params: { textInput: 'a' },
+        },
+      ],
     },
-    areas: {
-      content: {
-        blocks: [
-          {
-            type: 'TextInput',
-            blockId: 'textInput',
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-        ],
+    blocks: [
+      {
+        type: 'TextInput',
+        id: 'textInput',
       },
-    },
+    ],
   };
   const context = await testContext({
     lowdefy,
-    rootBlock,
-    initState: { textInput: 'a' },
+    pageConfig,
   });
-  const { textInput } = context.RootBlocks.map;
+  const { textInput } = context._internal.RootBlocks.map;
   expect(textInput.value).toBe('a');
   expect(context.state).toEqual({ textInput: 'a' });
   expect(textInput.setValue).toBeDefined();
@@ -832,42 +589,36 @@ test('set value from block with type enforceType', async () => {
 });
 
 test('parse visible operator with setValue', async () => {
-  const rootBlock = {
-    blockId: 'root',
-    meta: {
-      category: 'context',
+  const pageConfig = {
+    id: 'root',
+    type: 'Box',
+    events: {
+      onInit: [
+        {
+          id: 'init',
+          type: 'SetState',
+          params: { textA: 'show b', textB: 'b' },
+        },
+      ],
     },
-    areas: {
-      content: {
-        blocks: [
-          {
-            type: 'TextInput',
-            blockId: 'textA',
-            visible: true,
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-          {
-            type: 'TextInput',
-            blockId: 'textB',
-            visible: { '_mql.test': { on: { _state: true }, test: { textA: 'show b' } } },
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-        ],
+    blocks: [
+      {
+        type: 'TextInput',
+        id: 'textA',
+        visible: true,
       },
-    },
+      {
+        type: 'TextInput',
+        id: 'textB',
+        visible: { _eq: [{ _state: 'textA' }, 'show b'] },
+      },
+    ],
   };
   const context = await testContext({
     lowdefy,
-    rootBlock,
-    initState: { textA: 'show b', textB: 'b' },
+    pageConfig,
   });
-  const { textA } = context.RootBlocks.map;
+  const { textA } = context._internal.RootBlocks.map;
 
   expect(textA.value).toBe('show b');
   expect(context.state).toEqual({ textA: 'show b', textB: 'b' });
@@ -877,94 +628,86 @@ test('parse visible operator with setValue', async () => {
 });
 
 test('rec parse visible operator with setValue', async () => {
-  const rootBlock = {
-    blockId: 'root',
-    meta: {
-      category: 'context',
+  const pageConfig = {
+    id: 'root',
+    type: 'Box',
+    events: {
+      onInit: [
+        {
+          id: 'init',
+          type: 'SetState',
+          params: { textB: 'b', textA: 'a', textC: 'c' },
+        },
+      ],
     },
-    areas: {
-      content: {
-        blocks: [
-          {
-            type: 'TextInput',
-            blockId: 'textA',
-            visible: true,
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-          {
-            type: 'TextInput',
-            blockId: 'textB',
-            visible: { '_mql.test': { on: { _state: true }, test: { textA: 'show b' } } },
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-          {
-            type: 'TextInput',
-            blockId: 'textC',
-            visible: { '_mql.test': { on: { _state: true }, test: { textB: { $exists: true } } } },
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-        ],
+    blocks: [
+      {
+        type: 'TextInput',
+        id: 'textA',
+        visible: true,
       },
-    },
+      {
+        type: 'TextInput',
+        id: 'textB',
+        visible: { _eq: [{ _state: 'textA' }, 'show b'] },
+      },
+      {
+        type: 'TextInput',
+        id: 'textC',
+        visible: { _eq: [{ _state: 'textB' }, 'b'] },
+        // visible: { '_mql.test': { on: { _state: true }, test: { textB: { $exists: true } } } },s
+      },
+    ],
   };
   const context = await testContext({
     lowdefy,
-    rootBlock,
-    initState: { textB: 'b', textA: 'a', textC: 'c' },
+    pageConfig,
   });
-  const { textA } = context.RootBlocks.map;
+  const { textA, textB, textC } = context._internal.RootBlocks.map;
   expect(textA.value).toBe('a');
+  expect(textB.eval.visible).toBe(false);
+  expect(textC.eval.visible).toBe(false);
   expect(context.state).toEqual({ textA: 'a' });
   textA.setValue('show b');
   expect(textA.value).toBe('show b');
+  expect(textB.value).toBe('b');
+  expect(textC.value).toBe('c');
+  expect(textB.eval.visible).toBe(true);
+  expect(textC.eval.visible).toBe(true);
   expect(context.state).toEqual({ textA: 'show b', textB: 'b', textC: 'c' });
 });
 
 test('non-input blocks visibility toggle', async () => {
-  const rootBlock = {
-    blockId: 'root',
-    meta: {
-      category: 'context',
+  const pageConfig = {
+    id: 'root',
+    type: 'Box',
+    events: {
+      onInit: [
+        {
+          id: 'init',
+          type: 'SetState',
+          params: { swtch: true },
+        },
+      ],
     },
-    areas: {
-      content: {
-        blocks: [
-          {
-            type: 'Button',
-            blockId: 'button',
-            visible: { _state: 'swtch' },
-            meta: {
-              category: 'display',
-            },
-          },
-          {
-            type: 'Switch',
-            blockId: 'swtch',
-            meta: {
-              category: 'input',
-              valueType: 'boolean',
-            },
-          },
-        ],
+    blocks: [
+      {
+        type: 'Button',
+        id: 'button',
+        visible: { _state: 'swtch' },
       },
-    },
+      {
+        type: 'Switch',
+        id: 'swtch',
+      },
+    ],
   };
   const context = await testContext({
     lowdefy,
-    rootBlock,
-    initState: { swtch: true },
+    pageConfig,
   });
   expect(context.state).toEqual({ swtch: true });
-  const { button, swtch } = context.RootBlocks.map;
+  const { button, swtch } = context._internal.RootBlocks.map;
   expect(button.visibleEval.output).toEqual(true);
   swtch.setValue(false);
   expect(context.state).toEqual({ swtch: false });
@@ -975,58 +718,45 @@ test('non-input blocks visibility toggle', async () => {
 });
 
 test('non-input blocks visibility toggle in array', async () => {
-  const rootBlock = {
-    blockId: 'root',
-    meta: {
-      category: 'context',
+  const pageConfig = {
+    id: 'root',
+    type: 'Box',
+    events: {
+      onInit: [
+        {
+          id: 'init',
+          type: 'SetState',
+          params: { list: [{ swtch: true }, { swtch: false }] },
+        },
+      ],
     },
-    areas: {
-      content: {
+    blocks: [
+      {
+        type: 'List',
+        id: 'list',
         blocks: [
           {
-            type: 'List',
-            blockId: 'list',
-            meta: {
-              category: 'list',
-              valueType: 'array',
-            },
-            areas: {
-              content: {
-                blocks: [
-                  {
-                    type: 'Button',
-                    blockId: 'list.$.button',
-                    visible: { _state: 'list.$.swtch' },
-                    meta: {
-                      category: 'display',
-                    },
-                  },
-                  {
-                    type: 'Switch',
-                    blockId: 'list.$.swtch',
-                    meta: {
-                      category: 'input',
-                      valueType: 'boolean',
-                    },
-                  },
-                ],
-              },
-            },
+            type: 'Button',
+            id: 'list.$.button',
+            visible: { _state: 'list.$.swtch' },
+          },
+          {
+            type: 'Switch',
+            id: 'list.$.swtch',
           },
         ],
       },
-    },
+    ],
   };
   const context = await testContext({
     lowdefy,
-    rootBlock,
-    initState: { list: [{ swtch: true }, { swtch: false }] },
+    pageConfig,
   });
   expect(context.state).toEqual({ list: [{ swtch: true }, { swtch: false }] });
 
-  const button0 = context.RootBlocks.map['list.0.button'];
-  const button1 = context.RootBlocks.map['list.1.button'];
-  const swtch1 = context.RootBlocks.map['list.1.swtch'];
+  const button0 = context._internal.RootBlocks.map['list.0.button'];
+  const button1 = context._internal.RootBlocks.map['list.1.button'];
+  const swtch1 = context._internal.RootBlocks.map['list.1.swtch'];
 
   expect(button0.visibleEval.output).toEqual(true);
   expect(button1.visibleEval.output).toEqual(false);
@@ -1039,44 +769,39 @@ test('non-input blocks visibility toggle in array', async () => {
 });
 
 test('no need to evaluate invisible blocks', async () => {
-  const rootBlock = {
-    blockId: 'root',
-    meta: {
-      category: 'context',
+  const pageConfig = {
+    id: 'root',
+    type: 'Box',
+    events: {
+      onInit: [
+        {
+          id: 'init',
+          type: 'SetState',
+          params: { swtch: true },
+        },
+      ],
     },
-    areas: {
-      content: {
-        blocks: [
-          {
-            type: 'Button',
-            blockId: 'button',
-            visible: { _state: 'swtch' },
-            meta: {
-              category: 'display',
-            },
-            properties: {
-              field: { _state: 'swtch' },
-            },
-          },
-          {
-            type: 'Switch',
-            blockId: 'swtch',
-            meta: {
-              category: 'input',
-              valueType: 'boolean',
-            },
-          },
-        ],
+    blocks: [
+      {
+        type: 'Button',
+        id: 'button',
+        visible: { _state: 'swtch' },
+        properties: {
+          field: { _state: 'swtch' },
+        },
       },
-    },
+      {
+        type: 'Switch',
+        id: 'swtch',
+      },
+    ],
   };
   const context = await testContext({
     lowdefy,
-    rootBlock,
-    initState: { swtch: true },
+    pageConfig,
   });
   expect(context.state).toEqual({ swtch: true });
-  const { button, swtch } = context.RootBlocks.map;
+  const { button, swtch } = context._internal.RootBlocks.map;
   expect(button.visibleEval.output).toEqual(true);
   expect(button.propertiesEval.output.field).toEqual(true);
   swtch.setValue(false);
@@ -1089,66 +814,57 @@ test('no need to evaluate invisible blocks', async () => {
   expect(button.propertiesEval.output.field).toEqual(true);
 });
 
-// TODO: Check again
 test('max recuse limit', async () => {
-  const rootBlock = {
-    blockId: 'root',
-    meta: {
-      category: 'context',
+  const pageConfig = {
+    id: 'root',
+    type: 'Box',
+    events: {
+      onInit: [
+        {
+          id: 'init',
+          type: 'SetState',
+          params: { a: 'a', d: 'd', e: 'e' },
+        },
+      ],
     },
-    areas: {
-      content: {
-        blocks: [
-          {
-            type: 'TextInput',
-            blockId: 'a',
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-            visible: { '_mql.test': { on: { _state: true }, test: { a: { $ne: 'a' } } } },
-          },
-          {
-            type: 'TextInput',
-            blockId: 'c',
-            visible: true,
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-          {
-            type: 'TextInput',
-            blockId: 'd',
-            visible: { '_mql.test': { on: { _state: true }, test: { c: 'show d' } } },
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-          {
-            type: 'TextInput',
-            blockId: 'e',
-            visible: { '_mql.test': { on: { _state: true }, test: { d: { $exists: true } } } },
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-        ],
+    blocks: [
+      {
+        type: 'TextInput',
+        id: 'a',
+        visible: { _ne: [{ _state: 'a' }, 'a'] },
       },
-    },
+      {
+        type: 'TextInput',
+        id: 'c',
+        visible: true,
+      },
+      {
+        type: 'TextInput',
+        id: 'd',
+        visible: { _eq: [{ _state: 'c' }, 'show d'] },
+      },
+      {
+        type: 'TextInput',
+        id: 'e',
+        visible: { '_mql.test': { on: { _state: true }, test: { d: { $exists: true } } } },
+      },
+    ],
   };
   const context = await testContext({
     lowdefy,
-    rootBlock,
-    initState: { a: 'a', d: 'd', e: 'e' },
+    pageConfig,
   });
-  const { a, c } = context.RootBlocks.map;
+  const { c } = context._internal.RootBlocks.map;
 
-  expect(context.state).toEqual({ c: null });
-  expect(a.visibleEval.output).toEqual(false);
+  let count = 0;
+
+  const updateStateFromRoot = context._internal.RootBlocks.updateStateFromRoot;
+
+  context._internal.RootBlocks.updateStateFromRoot = () => {
+    count += 1;
+    updateStateFromRoot();
+  };
 
   c.setValue('show d');
-  expect(context.state).toEqual({ a: 'a', c: 'show d', d: 'd', e: 'e' });
+  expect(count).toEqual(21);
 });

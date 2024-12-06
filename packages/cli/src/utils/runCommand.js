@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -14,21 +14,21 @@
   limitations under the License.
 */
 
-import errorHandler from './errorHandler';
-import startUp from './startUp';
+import errorHandler from './errorHandler.js';
+import startUp from './startUp.js';
 
-function runCommand(fn) {
+const runCommand = ({ cliVersion, handler }) => {
   async function run(options, command) {
-    const context = {};
+    const context = { cliVersion };
     try {
       await startUp({ context, options, command });
-      const res = await fn({ context });
+      const res = await handler({ context });
       return res;
     } catch (error) {
       await errorHandler({ context, error });
     }
   }
   return run;
-}
+};
 
 export default runCommand;

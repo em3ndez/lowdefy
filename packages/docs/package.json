@@ -1,6 +1,6 @@
 {
   "name": "@lowdefy/docs",
-  "version": "3.23.2",
+  "version": "4.4.0",
   "license": "Apache-2.0",
   "description": "",
   "homepage": "https://lowdefy.com",
@@ -26,16 +26,30 @@
     "type": "git",
     "url": "https://github.com/lowdefy/lowdefy.git"
   },
+  "type": "module",
+  "exports": {
+    "./actions": "./dist/actions.js",
+    "./operators/client": "./dist/operatorsClient.js",
+    "./types": "./dist/types.js"
+  },
+  "files": [
+    "dist/*"
+  ],
   "scripts": {
+    "build": "swc src --out-dir dist --config-file ../../.swcrc --delete-dir-on-start",
     "clean": "rm -rf .lowdefy",
-    "test": "jest --coverage"
+    "prepublishOnly": "pnpm build",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js"
+  },
+  "dependencies": {
+    "@lowdefy/helpers": "4.4.0"
   },
   "devDependencies": {
-    "@babel/cli": "7.14.3",
-    "@babel/core": "7.14.3",
-    "@babel/preset-env": "7.14.4",
-    "babel-jest": "26.6.3",
-    "jest": "26.6.3"
+    "@jest/globals": "28.1.3",
+    "@swc/cli": "0.1.63",
+    "@swc/core": "1.3.99",
+    "@swc/jest": "0.2.29",
+    "jest": "28.1.3"
   },
   "publishConfig": {
     "access": "public"

@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ async function mockStartUpImp({ context, options = {} }) {
     log: jest.fn(),
   };
 
-  context.baseDirectory = options.baseDirectory || 'baseDirectory';
+  context.configDirectory = options.configDirectory ?? 'configDirectory';
 
   context.cliConfig = {};
   context.lowdefyVersion = 'lowdefyVersion';
@@ -35,8 +35,8 @@ async function mockStartUpImp({ context, options = {} }) {
   context.appId = 'appId';
   context.options = options;
 
-  context.cacheDirectory = `${context.baseDirectory}/cacheDirectory`;
-  context.outputDirectory = `${context.baseDirectory}/outputDirectory`;
+  context.cacheDirectory = `${context.configDirectory}/cacheDirectory`;
+  context.buildDirectory = `${context.configDirectory}/buildDirectory`;
 
   context.sendTelemetry = jest.fn();
 

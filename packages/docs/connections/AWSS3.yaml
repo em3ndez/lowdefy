@@ -1,4 +1,4 @@
-# Copyright 2020-2021 Lowdefy, Inc
+# Copyright 2020-2024 Lowdefy, Inc
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -129,7 +129,7 @@ _ref:
             - `conditions: object[] | string[][]`: Conditions to be enforced on the request. An array of objects, or condition arrays. See [here](https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-HTTPPOSTConstructPolicy.html).
             - `expires: number`: Number of seconds for which the policy should be valid.
             - `key: string`: __Required__ - Key (or filename) under which object will be stored. If another file is saved with the same key, that file will be overwritten, so a random string in this field is probably needed.
-
+            - `fields: object`: Fields to be included in the form. Useful for adding metadata to the object such as `Content-Type`. See [S3 POST policy](https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-HTTPPOSTConstructPolicy.html).
 
             #### Examples
 
@@ -138,15 +138,20 @@ _ref:
             - id: my_post_policy
               type: AwsS3PresignedPostPolicy
               connectionId: my_bucket_connection
+              payload:
+                filename:
+                  _args: filename
+                uid:
+                  _args: uid
               properties:
                 key:
                   _nunjucks:
                     template: uploads/{{filename}}-{{uid}}
                     on:
                       filename:
-                        _args: filename
+                        _payload: filename
                       uid:
-                        _args: filename
+                        _payload: uid
             ```
 
             ## Creating a bucket
@@ -186,7 +191,7 @@ _ref:
                         "https://YOUR_LOWDEFY_DOMAIN_HERE"
                     ],
                     "ExposeHeaders": []
-                },
+                }
             ]
             ```
 

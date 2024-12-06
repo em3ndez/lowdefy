@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -14,8 +14,10 @@
   limitations under the License.
 */
 
-import writeApp from './writeApp';
-import testContext from '../test/testContext';
+import { jest } from '@jest/globals';
+
+import writeApp from './writeApp.js';
+import testContext from '../test/testContext.js';
 
 const mockWriteBuildArtifact = jest.fn();
 
@@ -32,16 +34,7 @@ test('writeApp', async () => {
     },
   };
   await writeApp({ components, context });
-  expect(mockWriteBuildArtifact.mock.calls).toEqual([
-    [
-      {
-        filePath: 'app.json',
-        content: `{
-  "key": "value"
-}`,
-      },
-    ],
-  ]);
+  expect(mockWriteBuildArtifact.mock.calls).toEqual([['app.json', '{"key":"value"}']]);
 });
 
 test('writeApp empty config', async () => {
@@ -49,25 +42,11 @@ test('writeApp empty config', async () => {
     app: {},
   };
   await writeApp({ components, context });
-  expect(mockWriteBuildArtifact.mock.calls).toEqual([
-    [
-      {
-        filePath: 'app.json',
-        content: `{}`,
-      },
-    ],
-  ]);
+  expect(mockWriteBuildArtifact.mock.calls).toEqual([['app.json', '{}']]);
 });
 
 test('writeApp config undefined', async () => {
   const components = {};
   await writeApp({ components, context });
-  expect(mockWriteBuildArtifact.mock.calls).toEqual([
-    [
-      {
-        filePath: 'app.json',
-        content: `{}`,
-      },
-    ],
-  ]);
+  expect(mockWriteBuildArtifact.mock.calls).toEqual([['app.json', '{}']]);
 });

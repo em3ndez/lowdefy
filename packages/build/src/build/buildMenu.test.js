@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -14,8 +14,10 @@
   limitations under the License.
 */
 
-import buildMenu from './buildMenu';
-import testContext from '../test/testContext';
+import { jest } from '@jest/globals';
+
+import buildMenu from './buildMenu.js';
+import testContext from '../test/testContext.js';
 
 const mockLogWarn = jest.fn();
 
@@ -29,7 +31,185 @@ beforeEach(() => {
   mockLogWarn.mockReset();
 });
 
-test('buildMenu menus exist', async () => {
+test('menu id is not defined', () => {
+  const components = {
+    menus: [
+      {
+        id: undefined,
+        links: [
+          {
+            id: 'menu_page_1',
+            properties: {
+              title: 'Page 1',
+            },
+            type: 'MenuLink',
+            pageId: 'page_1',
+          },
+        ],
+      },
+    ],
+    pages: [
+      {
+        id: 'page:page_1',
+        pageId: 'page_1',
+        auth: { public: true },
+      },
+      {
+        id: 'page:page_2',
+        pageId: 'page_2',
+        auth: { public: false },
+      },
+    ],
+  };
+  expect(() => buildMenu({ components, context })).toThrow('Menu id missing.');
+});
+
+test('menu id is not a string', () => {
+  const components = {
+    menus: [
+      {
+        id: true,
+        links: [
+          {
+            id: 'menu_page_1',
+            properties: {
+              title: 'Page 1',
+            },
+            type: 'MenuLink',
+            pageId: 'page_1',
+          },
+        ],
+      },
+    ],
+    pages: [
+      {
+        id: 'page:page_1',
+        pageId: 'page_1',
+        auth: { public: true },
+      },
+      {
+        id: 'page:page_2',
+        pageId: 'page_2',
+        auth: { public: false },
+      },
+    ],
+  };
+  expect(() => buildMenu({ components, context })).toThrow(
+    'Menu id is not a string. Received true.'
+  );
+});
+
+test('throw on Duplicate menu ids', () => {
+  const components = {
+    menus: [
+      {
+        id: 'my_menu',
+        links: [
+          {
+            id: 'menu_page_1',
+            properties: {
+              title: 'Page 1',
+            },
+            type: 'MenuLink',
+            pageId: 'page_1',
+          },
+        ],
+      },
+      {
+        id: 'my_menu',
+        links: [
+          {
+            id: 'menu_page_1',
+            properties: {
+              title: 'Page 1',
+            },
+            type: 'MenuLink',
+            pageId: 'page_1',
+          },
+        ],
+      },
+    ],
+    pages: [
+      {
+        id: 'page:page_1',
+        pageId: 'page_1',
+        auth: { public: true },
+      },
+      {
+        id: 'page:page_2',
+        pageId: 'page_2',
+        auth: { public: false },
+      },
+    ],
+  };
+  expect(() => buildMenu({ components, context })).toThrow('Duplicate menuId "my_menu".');
+});
+
+test('throw on Duplicate menu item ids', () => {
+  const components = {
+    menus: [
+      {
+        id: 'default',
+        links: [
+          {
+            id: 'menu_page_1',
+            properties: {
+              title: 'Page 1',
+            },
+            type: 'MenuLink',
+            pageId: 'page_1',
+          },
+          {
+            id: 'menu_page_2',
+            properties: {
+              title: 'Page 2',
+            },
+            type: 'MenuLink',
+            pageId: 'page_2',
+          },
+        ],
+      },
+      {
+        id: 'my_menu',
+        links: [
+          {
+            id: 'menu_page_1',
+            properties: {
+              title: 'Page 1',
+            },
+            type: 'MenuLink',
+            pageId: 'page_1',
+          },
+          {
+            id: 'menu_page_1',
+            properties: {
+              title: 'Page 1',
+            },
+            type: 'MenuLink',
+            pageId: 'page_1',
+          },
+        ],
+      },
+    ],
+    pages: [
+      {
+        id: 'page:page_1',
+        pageId: 'page_1',
+        auth: { public: true },
+      },
+      {
+        id: 'page:page_2',
+        pageId: 'page_2',
+        auth: { public: false },
+      },
+    ],
+  };
+  expect(() => buildMenu({ components, context })).toThrow(
+    'Duplicate menuItemId "menu_page_1" on menu "my_menu".'
+  );
+});
+
+test('buildMenu menus exist', () => {
   const components = {
     menus: [
       {
@@ -75,7 +255,7 @@ test('buildMenu menus exist', async () => {
       },
     ],
   };
-  const res = await buildMenu({ components, context });
+  const res = buildMenu({ components, context });
   expect(res).toEqual({
     menus: [
       {
@@ -130,7 +310,7 @@ test('buildMenu menus exist', async () => {
   });
 });
 
-test('buildMenu nested menus', async () => {
+test('buildMenu nested menus', () => {
   const components = {
     menus: [
       {
@@ -161,7 +341,7 @@ test('buildMenu nested menus', async () => {
       },
     ],
   };
-  const res = await buildMenu({ components, context });
+  const res = buildMenu({ components, context });
   expect(res).toEqual({
     menus: [
       {
@@ -199,7 +379,7 @@ test('buildMenu nested menus', async () => {
   });
 });
 
-test('buildMenu default menu', async () => {
+test('buildMenu default menu', () => {
   const components = {
     pages: [
       {
@@ -219,7 +399,7 @@ test('buildMenu default menu', async () => {
       },
     ],
   };
-  const res = await buildMenu({ components, context });
+  const res = buildMenu({ components, context });
   expect(res).toEqual({
     menus: [
       {
@@ -270,9 +450,9 @@ test('buildMenu default menu', async () => {
   });
 });
 
-test('buildMenu no menu or pages exist', async () => {
+test('buildMenu no menu or pages exist', () => {
   const components = {};
-  const res = await buildMenu({ components, context });
+  const res = buildMenu({ components, context });
   expect(res).toEqual({
     menus: [
       {
@@ -284,7 +464,7 @@ test('buildMenu no menu or pages exist', async () => {
   });
 });
 
-test('buildMenu page does not exist', async () => {
+test('buildMenu page does not exist', () => {
   const components = {
     menus: [
       {
@@ -300,7 +480,7 @@ test('buildMenu page does not exist', async () => {
     ],
     pages: [],
   };
-  const res = await buildMenu({ components, context });
+  const res = buildMenu({ components, context });
   expect(res).toEqual({
     menus: [
       {
@@ -316,7 +496,7 @@ test('buildMenu page does not exist', async () => {
   ]);
 });
 
-test('buildMenu page does not exist, nested', async () => {
+test('buildMenu page does not exist, nested', () => {
   const components = {
     menus: [
       {
@@ -355,7 +535,7 @@ test('buildMenu page does not exist, nested', async () => {
     ],
     pages: [],
   };
-  const res = await buildMenu({ components, context });
+  const res = buildMenu({ components, context });
   expect(res).toEqual({
     menus: [
       {
@@ -395,7 +575,7 @@ test('buildMenu page does not exist, nested', async () => {
   ]);
 });
 
-test('buildMenu pages not array, menu exists', async () => {
+test('buildMenu pages not array, menu exists', () => {
   const components = {
     menus: [
       {
@@ -414,7 +594,7 @@ test('buildMenu pages not array, menu exists', async () => {
     ],
     pages: 'pages',
   };
-  const res = await buildMenu({ components, context });
+  const res = buildMenu({ components, context });
   expect(res).toEqual({
     menus: [
       {
@@ -438,11 +618,11 @@ test('buildMenu pages not array, menu exists', async () => {
   });
 });
 
-test('buildMenu pages not array, no menu', async () => {
+test('buildMenu pages not array, no menu', () => {
   const components = {
     pages: 'pages',
   };
-  const res = await buildMenu({ components, context });
+  const res = buildMenu({ components, context });
   expect(res).toEqual({
     menus: [
       {
@@ -455,7 +635,7 @@ test('buildMenu pages not array, no menu', async () => {
   });
 });
 
-test('buildMenu default menu filter 404 page', async () => {
+test('buildMenu default menu filter 404 page', () => {
   const components = {
     pages: [
       {
@@ -470,7 +650,7 @@ test('buildMenu default menu filter 404 page', async () => {
       },
     ],
   };
-  const res = await buildMenu({ components, context });
+  const res = buildMenu({ components, context });
   expect(res).toEqual({
     menus: [
       {

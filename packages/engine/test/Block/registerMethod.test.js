@@ -1,51 +1,41 @@
 /*
-   Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
-   Licensed under the Apache License, Version 2.0 (the "License");
-   you may not use this file except in compliance with the License.
-   You may obtain a copy of the License at
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
 
-       http://www.apache.org/licenses/LICENSE-2.0
+      http://www.apache.org/licenses/LICENSE-2.0
 
-   Unless required by applicable law or agreed to in writing, software
-   distributed under the License is distributed on an "AS IS" BASIS,
-   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   See the License for the specific language governing permissions and
-   limitations under the License.
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
 */
 
-import testContext from '../testContext';
+import testContext from '../testContext.js';
 
 const pageId = 'one';
 
 const lowdefy = { pageId };
 
 test('registerMethod adds a method to RootBlocks.methods', async () => {
-  const rootBlock = {
-    blockId: 'root',
-    meta: {
-      category: 'context',
-    },
-    areas: {
-      content: {
-        blocks: [
-          {
-            type: 'TextInput',
-            blockId: 'text',
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-        ],
+  const pageConfig = {
+    id: 'root',
+    type: 'Box',
+    blocks: [
+      {
+        type: 'TextInput',
+        id: 'text',
       },
-    },
+    ],
   };
   const context = await testContext({
     lowdefy,
-    rootBlock,
+    pageConfig,
   });
-  const { text } = context.RootBlocks.map;
+  const { text } = context._internal.RootBlocks.map;
 
   expect(text.registerMethod).toBeDefined();
   expect(text.methods).toEqual({});
@@ -56,39 +46,25 @@ test('registerMethod adds a method to RootBlocks.methods', async () => {
 });
 
 test('registerMethod add multiple methods to RootBlocks.methods', async () => {
-  const rootBlock = {
-    blockId: 'root',
-    meta: {
-      category: 'context',
-    },
-    areas: {
-      content: {
-        blocks: [
-          {
-            type: 'TextInput',
-            blockId: 'textA',
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-          {
-            type: 'TextInput',
-            blockId: 'textB',
-            meta: {
-              category: 'input',
-              valueType: 'string',
-            },
-          },
-        ],
+  const pageConfig = {
+    id: 'root',
+    type: 'Box',
+    blocks: [
+      {
+        type: 'TextInput',
+        id: 'textA',
       },
-    },
+      {
+        type: 'TextInput',
+        id: 'textB',
+      },
+    ],
   };
   const context = await testContext({
     lowdefy,
-    rootBlock,
+    pageConfig,
   });
-  const { textA, textB } = context.RootBlocks.map;
+  const { textA, textB } = context._internal.RootBlocks.map;
 
   const methodA = () => 'fn A response';
   const methodB1 = () => 'fn B1 response';

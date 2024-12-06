@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,13 +15,20 @@
 */
 
 import { get } from '@lowdefy/helpers';
-import { v1 as uuid } from 'uuid';
 
-import getRefPath from './getRefPath';
+import getRefPath from './getRefPath.js';
+import makeId from '../../utils/makeId.js';
 
-function makeRefDefinition(refDefinition) {
+function makeRefDefinition(refDefinition, parent, refMap) {
+  const id = makeId();
+  const refDef = {
+    parent,
+  };
+  refMap[id] = refDef;
   return {
-    id: uuid(),
+    ...refDef,
+    id,
+    key: get(refDefinition, 'key'),
     original: refDefinition,
     path: getRefPath(refDefinition),
     resolver: get(refDefinition, 'resolver'),

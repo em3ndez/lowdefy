@@ -1,4 +1,4 @@
-# Copyright 2020-2021 Lowdefy, Inc
+# Copyright 2020-2024 Lowdefy, Inc
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ _ref:
     block_type: RatingSlider
     value_type: number
     category: input
-    schema: ../blocks/blocksAntd/src/blocks/RatingSlider/RatingSlider.json
+    schema: ../plugins/blocks/blocks-antd/src/blocks/RatingSlider/schema.json
     filePath: blocks/input/RatingSlider.yaml
     description_content: |
       The `RatingSlider` block allows a user to choose a numerical value on a slider input. It is typically used for scores or ratings. It has the option to have a "Not Applicable" checkbox, which leaves the value as null.

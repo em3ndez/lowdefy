@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,27 +16,31 @@
 
 import React from 'react';
 import { Row } from 'antd';
-import gutterSetup from './gutterSetup.js';
-import { blockDefaultProps } from '@lowdefy/block-tools';
+import { blockDefaultProps } from '@lowdefy/block-utils';
 
-const Area = ({ area, areaStyle, children, highlightBorders, id, makeCssClass }) => (
-  <Row
-    id={id}
-    align={area.align}
-    className={makeCssClass(areaStyle)}
-    gutter={gutterSetup(area.gutter)}
-    justify={area.justify}
-    style={{
-      // antd keeps bottom margin which can cause overflow issues.
-      flexDirection: area.direction,
-      flexWrap: area.wrap,
-      overflow: area.overflow,
-      border: highlightBorders && '1px dashed red',
-    }}
-  >
-    {children}
-  </Row>
-);
+import gutterSetup from './gutterSetup.js';
+import layoutParamsToArea from './layoutParamsToArea.js';
+
+const Area = ({ area = {}, areaKey, areaStyle, children, id, layout, makeCssClass }) => {
+  const derivedArea = layoutParamsToArea({ area, areaKey, layout });
+  return (
+    <Row
+      id={id}
+      align={derivedArea.align}
+      className={makeCssClass(areaStyle)}
+      gutter={gutterSetup(derivedArea.gutter)}
+      justify={derivedArea.justify}
+      style={{
+        // antd keeps bottom margin which can cause overflow issues.
+        flexDirection: derivedArea.direction,
+        flexWrap: derivedArea.wrap,
+        overflow: derivedArea.overflow,
+      }}
+    >
+      {children}
+    </Row>
+  );
+};
 
 Area.defaultProps = blockDefaultProps;
 

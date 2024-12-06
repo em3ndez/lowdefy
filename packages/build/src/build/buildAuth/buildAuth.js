@@ -1,7 +1,7 @@
 /* eslint-disable no-param-reassign */
 
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -17,40 +17,34 @@
 */
 
 import { type } from '@lowdefy/helpers';
-import getPageRoles from './getPageRoles';
-import getProtectedPages from './getProtectedPages';
+import buildAuthPlugins from './buildAuthPlugins.js';
+import buildPageAuth from './buildPageAuth.js';
+import validateAuthConfig from './validateAuthConfig.js';
 
-function buildAuth({ components }) {
-  const protectedPages = getProtectedPages({ components });
-  const pageRoles = getPageRoles({ components });
-  let configPublicPages = [];
-  if (type.isArray(components.config.auth.pages.public)) {
-    configPublicPages = components.config.auth.pages.public;
+let warningLogged = false;
+
+function buildAuth({ components, context }) {
+  const configured = !type.isNone(components.auth);
+
+  if (configured && !context.entitlements.includes('AUTH')) {
+    if (!warningLogged) {
+      context.logger.warn(`
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ Authentication configured without a license key. ┃
+┠──────────────────────────────────────────────────┨
+┃ Paid features can not be used in production      ┃
+┃ without a valid license.                         ┃
+┃                                                  ┃
+┃ See https://docs.lowdefy.com/licenses.            ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛`);
+      warningLogged = true;
+    }
   }
 
-  (components.pages || []).forEach((page) => {
-    if (pageRoles[page.id]) {
-      if (configPublicPages.includes(page.id)) {
-        throw new Error(
-          `Page "${page.id}" is both protected by roles ${JSON.stringify(
-            pageRoles[page.id]
-          )} and public.`
-        );
-      }
-      page.auth = {
-        public: false,
-        roles: pageRoles[page.id],
-      };
-    } else if (protectedPages.includes(page.id)) {
-      page.auth = {
-        public: false,
-      };
-    } else {
-      page.auth = {
-        public: true,
-      };
-    }
-  });
+  validateAuthConfig({ components });
+  components.auth.configured = configured;
+  buildPageAuth({ components });
+  buildAuthPlugins({ components, context });
 
   return components;
 }

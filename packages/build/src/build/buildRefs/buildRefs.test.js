@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -14,8 +14,16 @@
   limitations under the License.
 */
 
-import buildRefs from './buildRefs';
-import testContext from '../../test/testContext';
+import { jest } from '@jest/globals';
+
+import testContext from '../../test/testContext.js';
+import buildRefs from './buildRefs.js';
+
+const mockLogWarn = jest.fn();
+
+const logger = {
+  warn: mockLogWarn,
+};
 
 const readConfigFileMockImplementation = (files) => {
   const mockImp = (filePath) => {
@@ -31,6 +39,7 @@ const readConfigFileMockImplementation = (files) => {
 const mockReadConfigFile = jest.fn();
 
 const context = testContext({
+  logger,
   readConfigFile: mockReadConfigFile,
 });
 
@@ -38,13 +47,13 @@ test('buildRefs no refs', async () => {
   const files = [
     {
       path: 'lowdefy.yaml',
-      content: `key: value`,
+      content: `field: value`,
     },
   ];
   mockReadConfigFile.mockImplementation(readConfigFileMockImplementation(files));
   const res = await buildRefs({ context });
   expect(res).toEqual({
-    key: 'value',
+    field: 'value',
   });
 });
 
@@ -146,7 +155,6 @@ md:
       content: `Some multiline
 text.
 
-
 Hello.`,
     },
     {
@@ -172,7 +180,6 @@ Hello there`,
     text: `Some multiline
 text.
 
-
 Hello.`,
   });
 });
@@ -187,9 +194,7 @@ invalid:
     },
   ];
   mockReadConfigFile.mockImplementation(readConfigFileMockImplementation(files));
-  await expect(buildRefs({ context })).rejects.toThrow(
-    'Invalid _ref definition {"_ref":null} in file lowdefy.yaml'
-  );
+  await expect(buildRefs({ context })).rejects.toThrow('Invalid _ref definition');
 });
 
 test('buildRefs invalid ref definition', async () => {
@@ -202,9 +207,7 @@ invalid:
     },
   ];
   mockReadConfigFile.mockImplementation(readConfigFileMockImplementation(files));
-  await expect(buildRefs({ context })).rejects.toThrow(
-    'Invalid _ref definition {"_ref":1} in file lowdefy.yaml'
-  );
+  await expect(buildRefs({ context })).rejects.toThrow('Invalid _ref definition');
 });
 
 test('buildRefs invalid ref definition 2', async () => {
@@ -218,8 +221,21 @@ invalid:
     },
   ];
   mockReadConfigFile.mockImplementation(readConfigFileMockImplementation(files));
+  await expect(buildRefs({ context })).rejects.toThrow('Invalid _ref definition');
+});
+
+test('buildRefs for file not found', async () => {
+  const files = [
+    {
+      path: 'lowdefy.yaml',
+      content: `
+invalid:
+  _ref: no_file.yaml`,
+    },
+  ];
+  mockReadConfigFile.mockImplementation(readConfigFileMockImplementation(files));
   await expect(buildRefs({ context })).rejects.toThrow(
-    'Invalid _ref definition {"_ref":{"a":"b"}} in file lowdefy.yaml'
+    'Tried to reference file "no_file.yaml" from "lowdefy.yaml", but file does not exist.'
   );
 });
 
@@ -256,17 +272,17 @@ templated:
   _ref:
     path: template.json.njk
     vars:
-      key: key1`,
+      field: field1`,
       },
       {
         path: 'template.json.njk',
-        content: '{ "{{ key }}": true }',
+        content: '{ "{{ field }}": true }',
       },
     ];
     mockReadConfigFile.mockImplementation(readConfigFileMockImplementation(files));
     const res = await buildRefs({ context });
     expect(res).toEqual({
-      templated: { key1: true },
+      templated: { field1: true },
     });
   });
 
@@ -287,7 +303,7 @@ templated:
         path: 'template.yaml.njk',
         content: `list:
 {% for value in values %}
-  - key: {{ value }}
+  - field: {{ value }}
 {% endfor %}
 `,
       },
@@ -295,7 +311,7 @@ templated:
     mockReadConfigFile.mockImplementation(readConfigFileMockImplementation(files));
     const res = await buildRefs({ context });
     expect(res).toEqual({
-      templated: { list: [{ key: 'value1' }, { key: 'value2' }] },
+      templated: { list: [{ field: 'value1' }, { field: 'value2' }] },
     });
   });
 
@@ -316,7 +332,7 @@ templated:
         path: 'template.yml.njk',
         content: `list:
 {% for value in values %}
-  - key: {{ value }}
+  - field: {{ value }}
 {% endfor %}
       `,
       },
@@ -324,13 +340,13 @@ templated:
     mockReadConfigFile.mockImplementation(readConfigFileMockImplementation(files));
     const res = await buildRefs({ context });
     expect(res).toEqual({
-      templated: { list: [{ key: 'value1' }, { key: 'value2' }] },
+      templated: { list: [{ field: 'value1' }, { field: 'value2' }] },
     });
   });
 });
 
 describe('vars', () => {
-  test('buildRefs var specified by name', async () => {
+  test('buildRefs var specified by field', async () => {
     const files = [
       {
         path: 'lowdefy.yaml',
@@ -344,16 +360,16 @@ describe('vars', () => {
       {
         path: 'file.yaml',
         content: `
-  key:
+  field:
     _var:
-      name: var1`,
+      key: var1`,
       },
     ];
     mockReadConfigFile.mockImplementation(readConfigFileMockImplementation(files));
     const res = await buildRefs({ context });
     expect(res).toEqual({
       ref: {
-        key: 'value',
+        field: 'value',
       },
     });
   });
@@ -372,9 +388,9 @@ describe('vars', () => {
       {
         path: 'file.yaml',
         content: `
-  key:
+  field:
     _var:
-      name: var1
+      key: var1
       default: default`,
       },
     ];
@@ -382,7 +398,7 @@ describe('vars', () => {
     const res = await buildRefs({ context });
     expect(res).toEqual({
       ref: {
-        key: 'value',
+        field: 'value',
       },
     });
   });
@@ -401,13 +417,13 @@ describe('vars', () => {
       {
         path: 'file.yaml',
         content: `
-  key1:
+  field1:
     _var:
-      name: var1
+      key: var1
       default: default
-  key2:
+  field2:
     _var:
-      name: var2
+      key: var2
       default: default`,
       },
     ];
@@ -415,8 +431,8 @@ describe('vars', () => {
     const res = await buildRefs({ context });
     expect(res).toEqual({
       ref: {
-        key1: null,
-        key2: 'default',
+        field1: null,
+        field2: 'default',
       },
     });
   });
@@ -433,25 +449,25 @@ describe('vars', () => {
       {
         path: 'file.yaml',
         content: `
-  key_empty_str:
+  field_empty_str:
     _var:
-      name: var1
+      key: var1
       default: ''
-  key_false:
+  field_false:
     _var:
-      name: var2
+      key: var2
       default: false
-  key_NaN:
+  field_NaN:
     _var:
-      name: var3
+      key: var3
       default: .nan
-  key_Inf:
+  field_Inf:
     _var:
-      name: var4
+      key: var4
       default: .inf
-  key_zero:
+  field_zero:
     _var:
-      name: var5
+      key: var5
       default: 0`,
       },
     ];
@@ -459,11 +475,11 @@ describe('vars', () => {
     const res = await buildRefs({ context });
     expect(res).toEqual({
       ref: {
-        key_empty_str: '',
-        key_false: false,
-        key_NaN: null,
-        key_Inf: null,
-        key_zero: 0,
+        field_empty_str: '',
+        field_false: false,
+        field_NaN: null,
+        field_Inf: null,
+        field_zero: 0,
       },
     });
   });
@@ -482,13 +498,13 @@ describe('vars', () => {
       {
         path: 'file.yaml',
         content: `
-  key:
+  field:
     _var: [1]`,
       },
     ];
     mockReadConfigFile.mockImplementation(readConfigFileMockImplementation(files));
     await expect(buildRefs({ context })).rejects.toThrow(
-      '"_var" operator takes a string or object with name field as arguments. Received "{"_var":[1]}"'
+      '"_var" operator takes a string or object with "key" field as arguments.'
     );
   });
 
@@ -502,7 +518,7 @@ describe('vars', () => {
       path: file.yaml
       vars:
         var1:
-          key: value`,
+          field: value`,
       },
       {
         path: 'file.yaml',
@@ -517,15 +533,15 @@ describe('vars', () => {
     const res = await buildRefs({ context });
     expect(res).toEqual({
       ref: {
-        ref1: { key: 'value' },
-        ref2: { key: 'value' },
+        ref1: { field: 'value' },
+        ref2: { field: 'value' },
       },
     });
-    res.ref.ref1.key = 'newValue';
+    res.ref.ref1.field = 'newValue';
     expect(res).toEqual({
       ref: {
-        ref1: { key: 'newValue' },
-        ref2: { key: 'value' },
+        ref1: { field: 'newValue' },
+        ref2: { field: 'value' },
       },
     });
   });
@@ -768,6 +784,239 @@ ref2:
   });
 });
 
+describe('get key from referenced file', () => {
+  test('buildRefs get key from referenced yaml file', async () => {
+    const files = [
+      {
+        path: 'lowdefy.yaml',
+        content: `
+field:
+  _ref:
+    path: target.yaml
+    key: targetField`,
+      },
+      {
+        path: 'target.yaml',
+        content: 'targetField: value',
+      },
+    ];
+    mockReadConfigFile.mockImplementation(readConfigFileMockImplementation(files));
+    const res = await buildRefs({ context });
+    expect(res).toEqual({
+      field: 'value',
+    });
+  });
+
+  test('buildRefs get key from referenced json file', async () => {
+    const files = [
+      {
+        path: 'lowdefy.yaml',
+        content: `
+field:
+  _ref:
+    path: target.json
+    key: targetField`,
+      },
+      {
+        path: 'target.json',
+        content: '{"targetField": "value"}',
+      },
+    ];
+    mockReadConfigFile.mockImplementation(readConfigFileMockImplementation(files));
+    const res = await buildRefs({ context });
+    expect(res).toEqual({
+      field: 'value',
+    });
+  });
+
+  test('buildRefs get key from referenced file returns default null', async () => {
+    const files = [
+      {
+        path: 'lowdefy.yaml',
+        content: `
+field:
+  _ref:
+    path: target.yaml
+    key: field2`,
+      },
+      {
+        path: 'target.yaml',
+        content: 'field1: value',
+      },
+    ];
+    mockReadConfigFile.mockImplementation(readConfigFileMockImplementation(files));
+    const res = await buildRefs({ context });
+    expect(res).toEqual({
+      field: null,
+    });
+  });
+
+  test('buildRefs get key from referenced file returns null if file is not a yaml or json file', async () => {
+    const files = [
+      {
+        path: 'lowdefy.yaml',
+        content: `
+field:
+  _ref:
+    path: target.txt
+    key: targetField`,
+      },
+      {
+        path: 'target.txt',
+        content: 'targetField: value',
+      },
+    ];
+    mockReadConfigFile.mockImplementation(readConfigFileMockImplementation(files));
+    const res = await buildRefs({ context });
+    expect(res).toEqual({
+      field: null,
+    });
+  });
+
+  test('buildRefs get key from chained referenced files', async () => {
+    const files = [
+      {
+        path: 'lowdefy.yaml',
+        content: `
+field:
+  _ref:
+    path: target.yaml
+    key: targetField`,
+      },
+      {
+        path: 'target.yaml',
+        content: '_ref: shared.yaml',
+      },
+      {
+        path: 'shared.yaml',
+        content: 'targetField: value',
+      },
+    ];
+    mockReadConfigFile.mockImplementation(readConfigFileMockImplementation(files));
+    const res = await buildRefs({ context });
+    expect(res).toEqual({
+      field: 'value',
+    });
+  });
+
+  test('buildRefs get key from referenced file with build operators', async () => {
+    const files = [
+      {
+        path: 'lowdefy.yaml',
+        content: `
+field:
+  _ref:
+    path: target.yaml
+    key: targetField`,
+      },
+      {
+        path: 'target.yaml',
+        content: `
+        _build.object.assign:
+          - field1: value1
+            field2: value2
+          - targetField: value
+            `,
+      },
+    ];
+    mockReadConfigFile.mockImplementation(readConfigFileMockImplementation(files));
+    const res = await buildRefs({ context });
+    expect(res).toEqual({
+      field: 'value',
+    });
+  });
+
+  test('buildRefs get key from chained referenced files with build operators', async () => {
+    const files = [
+      {
+        path: 'lowdefy.yaml',
+        content: `
+field:
+  _ref:
+    path: target.yaml
+    key: field1`,
+      },
+      {
+        path: 'target.yaml',
+        content: `
+        _build.object.assign:
+          - _ref: defaults.yaml
+          - field1: newValue
+            field3: value3
+            `,
+      },
+      {
+        path: 'defaults.yaml',
+        content: `
+field1: value1
+field2: value2`,
+      },
+    ];
+    mockReadConfigFile.mockImplementation(readConfigFileMockImplementation(files));
+    const res = await buildRefs({ context });
+    expect(res).toEqual({
+      field: 'newValue',
+    });
+  });
+  // This test fails until issue #1488 is fixed
+  //   test('buildRefs get key, built using operators, from referenced file', async () => {
+  //     const files = [
+  //       {
+  //         path: 'lowdefy.yaml',
+  //         content: `
+  // field:
+  //   _ref:
+  //     path: target.yaml
+  //     key:
+  //       _build.string.concat:
+  //         - target
+  //         - Field`,
+  //       },
+  //       {
+  //         path: 'target.yaml',
+  //         content: 'targetField: value',
+  //       },
+  //     ];
+  //     mockReadConfigFile.mockImplementation(readConfigFileMockImplementation(files));
+  //     const res = await buildRefs({ context });
+  //     expect( res).toEqual({
+  //       field: 'value',
+  //     });
+  //   });
+  test('buildRefs get _var key', async () => {
+    const files = [
+      {
+        path: 'lowdefy.yaml',
+        content: `
+field:
+  _ref:
+    path: target.yaml
+    vars:
+      field: targetField
+    `,
+      },
+      {
+        path: 'target.yaml',
+        content: `
+_ref:
+    path: target2.yaml
+    key:
+      _var: field
+    `,
+      },
+      {
+        path: 'target2.yaml',
+        content: 'targetField: value',
+      },
+    ];
+    mockReadConfigFile.mockImplementation(readConfigFileMockImplementation(files));
+    const res = await buildRefs({ context });
+    expect(res).toEqual({
+      field: 'value',
+    });
+  });
+});
+
 describe('transformer functions', () => {
   test('buildRefs with transformer function', async () => {
     const files = [
@@ -827,12 +1076,11 @@ _ref:
     mockReadConfigFile.mockImplementation(readConfigFileMockImplementation(files));
     const res = await buildRefs({ context });
     expect(mockReadConfigFile.mock.calls).toEqual([['lowdefy.yaml']]);
-    // Return context gets JSON stringified and parsed, so functions are stripped
     expect(res).toEqual({
       resolved: true,
       path: null,
       vars: {},
-      context: { configDirectory: '', logger: {} },
+      stage: 'test',
     });
   });
 
@@ -857,8 +1105,7 @@ _ref:
       vars: {
         var: 'var1',
       },
-      // Return context gets JSON stringified and parsed, so functions are stripped
-      context: { configDirectory: '', logger: {} },
+      stage: 'test',
     });
   });
 
@@ -1045,11 +1292,95 @@ _ref: target`,
       resolved: true,
       path: 'target',
       vars: {},
-      context: {
-        configDirectory: '',
-        logger: {},
-        refResolver: 'src/test/buildRefs/testBuildRefsResolver.js',
-      },
+      stage: 'test',
     });
+  });
+});
+
+describe('Evaluate build time operators', () => {
+  test('Evaluate build time operators in lowdefy.yaml', async () => {
+    const files = [
+      {
+        path: 'lowdefy.yaml',
+        content: `
+answer:
+  _build.sum:
+    - 1
+    - 1`,
+      },
+    ];
+    mockReadConfigFile.mockImplementation(readConfigFileMockImplementation(files));
+    const res = await buildRefs({ context });
+    expect(res).toEqual({
+      answer: 2,
+    });
+  });
+
+  test('Evaluate build time operators in referenced file', async () => {
+    const files = [
+      {
+        path: 'lowdefy.yaml',
+        content: `
+answer:
+  _ref: file.yaml`,
+      },
+      {
+        path: 'file.yaml',
+        content: `
+_build.sum:
+  - 1
+  - 1`,
+      },
+    ];
+    mockReadConfigFile.mockImplementation(readConfigFileMockImplementation(files));
+    const res = await buildRefs({ context });
+    expect(res).toEqual({
+      answer: 2,
+    });
+  });
+
+  test('Build time operator error in lowdefy.yaml', async () => {
+    const files = [
+      {
+        path: 'lowdefy.yaml',
+        content: `
+answer:
+  _build.sum: A`,
+      },
+    ];
+    mockReadConfigFile.mockImplementation(readConfigFileMockImplementation(files));
+    const res = await buildRefs({ context });
+    expect(res).toEqual({
+      answer: null,
+    });
+    expect(mockLogWarn.mock.calls).toEqual([
+      ['Build operator errors.'],
+      ['Operator Error: _sum takes an array type as input. Received: "A" at lowdefy.yaml.'],
+    ]);
+  });
+
+  test('Build time operator error in referenced file', async () => {
+    const files = [
+      {
+        path: 'lowdefy.yaml',
+        content: `
+answer:
+  _ref: file.yaml`,
+      },
+      {
+        path: 'file.yaml',
+        content: `
+_build.sum: A`,
+      },
+    ];
+    mockReadConfigFile.mockImplementation(readConfigFileMockImplementation(files));
+    const res = await buildRefs({ context });
+    expect(res).toEqual({
+      answer: null,
+    });
+    expect(mockLogWarn.mock.calls).toEqual([
+      ['Build operator errors.'],
+      ['Operator Error: _sum takes an array type as input. Received: "A" at file.yaml.'],
+    ]);
   });
 });

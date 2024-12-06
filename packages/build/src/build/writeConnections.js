@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
   limitations under the License.
 */
 
-import { type } from '@lowdefy/helpers';
+import { type, serializer } from '@lowdefy/helpers';
 
 async function writeConnections({ components, context }) {
   if (type.isNone(components.connections)) return;
@@ -22,10 +22,10 @@ async function writeConnections({ components, context }) {
     throw new Error(`Connections is not an array.`);
   }
   const writePromises = components.connections.map(async (connection) => {
-    await context.writeBuildArtifact({
-      filePath: `connections/${connection.connectionId}.json`,
-      content: JSON.stringify(connection, null, 2),
-    });
+    await context.writeBuildArtifact(
+      `connections/${connection.connectionId}.json`,
+      serializer.serializeToString(connection)
+    );
   });
   return Promise.all(writePromises);
 }

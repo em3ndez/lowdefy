@@ -1,4 +1,4 @@
-# Copyright 2020-2021 Lowdefy, Inc
+# Copyright 2020-2024 Lowdefy, Inc
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ _ref:
     pageId: _get
     pageTitle: _get
     filePath: operators/_get.yaml
+    build: true
     types: |
       ```
       (arguments: {
@@ -53,12 +54,12 @@ _ref:
         key:
           _state: status
         from:
-          new: PlusCircleTwoTone
-          escalated: ExclamationCircleOutlined
-          investigation_started: ToolTwoTone
-          client_contacted: SoundTwoTone
-          awaiting_confirmation: LikeOutlined
-          closed: StopOutlined
+          new: AiTwoTonePlusCircle
+          escalated: AiOutlineExclamationCircle
+          investigation_started: AiTwoToneTool
+          client_contacted: AiTwoToneSound
+          awaiting_confirmation: AiOutlineLike
+          closed: AiOutlineStop
       ```
       Returns: The icon corresponding to the status in state.
 

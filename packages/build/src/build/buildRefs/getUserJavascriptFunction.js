@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -14,11 +14,15 @@
   limitations under the License.
 */
 import path from 'path';
-import { readFile } from '@lowdefy/node-utils';
+import { pathToFileURL } from 'url';
 
 async function getUserJavascriptFunction({ context, filePath }) {
-  const jsFile = await readFile(path.resolve(context.configDirectory, filePath));
-  return eval(jsFile);
+  try {
+    return (await import(pathToFileURL(path.join(context.directories.config, filePath)))).default;
+  } catch (error) {
+    context.logger.error(`Error importing ${filePath}.`);
+    throw Error(error);
+  }
 }
 
 export default getUserJavascriptFunction;

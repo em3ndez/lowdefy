@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,30 +15,58 @@
 */
 
 import { type, urlQuery as urlQueryFn } from '@lowdefy/helpers';
-import { makeContextId } from '@lowdefy/engine';
 
-function createLink({ backLink, lowdefy, newOriginLink, sameOriginLink }) {
-  function link({ back, home, input, newTab, pageId, url, urlQuery }) {
-    if (back) {
-      return backLink();
+function createLink({ backLink, disabledLink, lowdefy, newOriginLink, noLink, sameOriginLink }) {
+  function link(props) {
+    if (props.disabled === true) {
+      return disabledLink(props);
     }
-    const lowdefyUrlQuery = type.isNone(urlQuery) ? '' : `?${urlQueryFn.stringify(urlQuery)}`;
-    if (home) pageId = lowdefy.homePageId;
-    if (pageId) {
-      if (!type.isNone(input)) {
-        const nextContextId = makeContextId({
-          pageId,
-          urlQuery: urlQuery,
-          blockId: pageId,
-        });
-        lowdefy.inputs[nextContextId] = input;
-      }
-      return sameOriginLink(`/${pageId}${lowdefyUrlQuery}`, newTab);
-    } else if (url) {
-      return newOriginLink(`${url}${lowdefyUrlQuery}`, newTab);
-    } else {
-      throw new Error(`Invalid Link.`);
+    if (
+      [!props.pageId, !props.back, !props.home, !props.href, !props.url].filter((v) => !v).length >
+      1
+    ) {
+      throw Error(
+        `Invalid Link: To avoid ambiguity, only one of 'back', 'home', 'href', 'pageId' or 'url' can be defined.`
+      );
     }
+    if (props.back === true) {
+      // Cannot set input or urlQuery on back
+      return backLink(props);
+    }
+    const query = type.isNone(props.urlQuery) ? '' : `${urlQueryFn.stringify(props.urlQuery)}`;
+    if (props.home === true) {
+      const pathname = `/${lowdefy.home.configured ? '' : lowdefy.home.pageId}`;
+      return sameOriginLink({
+        ...props,
+        pathname,
+        query,
+        setInput: () => {
+          lowdefy.inputs[`page:${lowdefy.home.pageId}`] = props.input ?? {};
+        },
+      });
+    }
+    if (type.isString(props.pageId)) {
+      return sameOriginLink({
+        ...props,
+        pathname: `/${props.pageId}`,
+        query,
+        setInput: () => {
+          lowdefy.inputs[`page:${props.pageId}`] = props.input ?? {};
+        },
+      });
+    }
+    if (type.isString(props.href)) {
+      return newOriginLink(props);
+    }
+    if (type.isString(props.url)) {
+      const protocol = props.url.includes(':') ? '' : 'https://';
+      return newOriginLink({
+        ...props,
+        url: `${protocol}${props.url}`,
+        query,
+      });
+    }
+    return noLink(props);
   }
   return link;
 }

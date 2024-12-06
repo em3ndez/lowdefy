@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -14,33 +14,34 @@
   limitations under the License.
 */
 
-import path from 'path';
-import fse from 'fs-extra';
-import getFederatedModule from '../../utils/getFederatedModule';
+import addCustomPluginsAsDeps from '../../utils/addCustomPluginsAsDeps.js';
+import getServer from '../../utils/getServer.js';
+import installServer from '../../utils/installServer.js';
+import resetServerPackageJson from '../../utils/resetServerPackageJson.js';
+import runLowdefyBuild from '../../utils/runLowdefyBuild.js';
+import runNextBuild from '../../utils/runNextBuild.js';
 
 async function build({ context }) {
-  const { default: buildScript } = await getFederatedModule({
-    module: 'build',
-    packageName: '@lowdefy/build',
-    version: context.lowdefyVersion,
-    context,
-  });
-  context.print.log(
-    `Cleaning block meta cache at "${path.resolve(context.cacheDirectory, './meta')}".`
-  );
-
-  await fse.emptyDir(path.resolve(context.cacheDirectory, './meta'));
   context.print.info('Starting build.');
-  await buildScript({
-    blocksServerUrl: context.options.blocksServerUrl,
-    cacheDirectory: context.cacheDirectory,
-    configDirectory: context.baseDirectory,
-    logger: context.print,
-    outputDirectory: context.outputDirectory,
-    refResolver: context.options.refResolver,
-  });
-  await context.sendTelemetry();
-  context.print.log(`Build artifacts saved at ${context.outputDirectory}.`);
+
+  const directory = context.directories.server;
+
+  let packageName = '@lowdefy/server-community';
+
+  if (!context.options.communityEdition) {
+    packageName = '@lowdefy/server-enterprise';
+  }
+
+  await getServer({ context, packageName, directory });
+  await resetServerPackageJson({ context, directory });
+  await addCustomPluginsAsDeps({ context, directory });
+  await installServer({ context, directory });
+  await runLowdefyBuild({ context, directory });
+  await installServer({ context, directory });
+  if (context.options.nextBuild !== false) {
+    await runNextBuild({ context, directory });
+  }
+  await context.sendTelemetry({ sendTypes: true });
   context.print.succeed(`Build successful.`);
 }
 

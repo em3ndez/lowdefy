@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -20,14 +20,12 @@ function getProtectedPages({ components }) {
   const pageIds = (components.pages || []).map((page) => page.id);
   let protectedPages = [];
 
-  if (type.isArray(components.config.auth.pages.public)) {
-    protectedPages = pageIds.filter(
-      (pageId) => !components.config.auth.pages.public.includes(pageId)
-    );
-  } else if (components.config.auth.pages.protected === true) {
+  if (type.isArray(components.auth.pages.public)) {
+    protectedPages = pageIds.filter((pageId) => !components.auth.pages.public.includes(pageId));
+  } else if (components.auth.pages.protected === true) {
     protectedPages = pageIds;
-  } else if (type.isArray(components.config.auth.pages.protected)) {
-    protectedPages = components.config.auth.pages.protected;
+  } else if (type.isArray(components.auth.pages.protected)) {
+    protectedPages = components.auth.pages.protected;
   }
   return protectedPages;
 }

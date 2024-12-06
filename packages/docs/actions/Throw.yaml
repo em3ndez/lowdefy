@@ -1,4 +1,4 @@
-# Copyright 2020-2021 Lowdefy, Inc
+# Copyright 2020-2024 Lowdefy, Inc
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ _ref:
     examples: |
       ###### Throw with custom message:
       ```yaml
-      - id: throw
+      - id: foo_throw
         type: Throw
         params:
           throw:
@@ -50,7 +50,7 @@ _ref:
 
       ###### Throw with metaData:
       ```yaml
-      - id: throw
+      - id: foo_throw
         type: Throw
         params:
           throw:
@@ -63,7 +63,7 @@ _ref:
       ```
       ###### Override custom message:
       ```yaml
-      - id: throw
+      - id: foo_throw
         type: Throw
         messages:
           error: Meh.
@@ -76,7 +76,7 @@ _ref:
       ```
       ###### Fail silently:
       ```yaml
-      - id: throw
+      - id: foo_throw
         type: Throw
         messages:
           error: false

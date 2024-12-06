@@ -1,4 +1,4 @@
-# Copyright 2020-2021 Lowdefy, Inc
+# Copyright 2020-2024 Lowdefy, Inc
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,9 +17,7 @@ _ref:
   vars:
     block_type: Divider
     category: display
-    schema: ../blocks/blocksAntd/src/blocks/Divider/Divider.json
+    schema: ../plugins/blocks/blocks-antd/src/blocks/Divider/schema.json
     filePath: blocks/display/Divider.yaml
     description_content: |
       A divider line. Can be used horizontally or vertically.
-
-      

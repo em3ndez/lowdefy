@@ -1,4 +1,4 @@
-# Copyright 2020-2021 Lowdefy, Inc
+# Copyright 2020-2024 Lowdefy, Inc
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,86 +20,83 @@ _ref:
     section: Deployment
     filePath: deployment/docker.yaml
     content:
-      - id: md1
+      - id: content
         type: Markdown
         properties:
           content: |
-            The [official Lowdefy Docker](https://hub.docker.com/repository/docker/lowdefy/lowdefy) images can be found on Docker Hub.
+            ### Building a Lowdefy app image
 
-            Examples of Docker configuration can be found in the [example repository](https://github.com/lowdefy/lowdefy-example-docker).
+            A Lowdefy app can be self-hosted or deployed to many hosting providers using Docker containers. The app needs to build into a Docker image, containing all the app configuration and a [Next.js Docker server](https://nextjs.org/docs/deployment#docker-image).
 
-            The Lowdefy Docker images contain a Lowdefy server. The configuration of the Lowdefy app can either be built into a new image based on the Lowdefy image, or the configuration read from the file system, usually provided as a volume.
+            The `init-docker` CLI command can be used to create a Dockerfile, or the following Dockerfile can be used:
 
-            The Lowdefy server can be configured using the following environment variables:
-
-            - `LOWDEFY_SERVER_BASE_PATH`: Set the base path to serve the Lowdefy application from. This will serve the application under `https://example.com/<base-path>`instead of `https://example.com`,  and all pages under `https://example.com/<base-path>/<page-id>` instead of the default `https://example.com/<page-id>`.
-            - `LOWDEFY_SERVER_BUILD_DIRECTORY`: The directory of the built Lowdefy configuration (The output of `lowdefy build`, usually found at `./.lowdefy/build` in your project repository). The default is `./build` (or `/home/node/lowdefy/build`).
-            - `LOWDEFY_SERVER_PUBLIC_DIRECTORY`: The directory of the public assets to be served. The default is `./public` (or `/home/node/lowdefy/public`).
-            - `LOWDEFY_SERVER_PORT`: The port (inside the container) at which to run the server. The default is `3000`.
-
-      - id: warning_update_dockerfile
-        type: Alert
-        properties:
-          type: warning
-          icon: WarningFilled
-          description: When updating your app to a new Lowdefy version, make sure to update the Lowdefy version in the Dockerfile
-
-      - id: md2
-        type: Markdown
-        properties:
-          content: |
-            # Building a Lowdefy app image
-
-            To build the configuration into an image, the following Dockerfile can be used:
             ```text
-            FROM node:14-buster AS build
+            FROM node:18-buster AS builder
 
-            # Set working directory and node user
-            WORKDIR /home/node/lowdefy
+            WORKDIR /lowdefy
 
-            RUN chown node:node /home/node/lowdefy
+            COPY . .
+            # Configure standalone next build
+            ENV LOWDEFY_BUILD_OUTPUT_STANDALONE 1
 
-            USER node
+            # Enable pnpm using corepack
+            RUN corepack enable
 
-            # Copy app config and change ownership of files to "node" user
-            COPY  --chown=node:node  . .
+            # Build lowdefy app
+            RUN pnpx lowdefy@4 build --log-level=debug
 
-            # Build the Lowdefy config using the Lowdefy CLI
-            RUN npx lowdefy@3.23.2 build
+            FROM node:18-alpine AS runner
 
-            # Use the correct Lowdefy base image
-            FROM lowdefy/lowdefy:3.23.2
+            ENV NODE_ENV production
+            ENV NEXT_TELEMETRY_DISABLED 1
 
-            # Copy build output from build stage
-            COPY --from=build --chown=node:node /home/node/lowdefy/.lowdefy/build ./build
+            WORKDIR /lowdefy
 
-            # Copy contents of public directory into image
-            COPY --chown=node:node ./public ./public
+            RUN addgroup --system --gid 1001 nodejs
+            RUN adduser --system --uid 1001 lowdefy
 
-            # Run the server on start
-            CMD ["node", "./dist/server.js"]
+            COPY --from=builder --chown=lowdefy:nodejs /lowdefy/.lowdefy/server/public ./public
+            COPY --from=builder --chown=lowdefy:nodejs /lowdefy/.lowdefy/server/.next/standalone ./
+            COPY --from=builder --chown=lowdefy:nodejs /lowdefy/.lowdefy/server/.next/static ./.next/static
+
+            USER lowdefy
+
+            EXPOSE 3000
+
+            ENV PORT 3000
+
+            CMD ["node", "server.js"]
             ```
 
             with a `.dockerignore` file:
 
             ```
-            .lowdefy/**
+            Dockerfile
+            .dockerignore
             .env
+            node_modules
+            README.md
+            .lowdefy
+            .next
+            .git
             ```
 
             An image can be built by running:
+
             ```
             docker build -t <tag> .
             ```
 
             The container can be run by:
+
             ```
             docker run -p 3000:3000 <tag>
             ```
 
-            Docker compose can also be used. Use a `docker-compose.yaml` file:
-            ```
-            version: "3.8"
+            Docker compose can also be used. Add a `docker-compose.yaml` file:
+
+            ```yaml
+            version: "3.9"
             services:
               lowdefy:
                 build: .
@@ -108,11 +105,83 @@ _ref:
             ```
 
             To build the image, run:
+
             ```
             docker compose build
             ```
 
             To run the app, run:
+
             ```
             docker compose up
+            ```
+
+            ### Secrets and Environment Variables
+
+            When running you app in production we recommend using your hosting provider's preferred method for setting environment variables and secrets. This can often be configured using their admin interface, and secrets are usually encrypted.
+
+            When running locally, you can use the `--env-file` Docker CLI option to load a `.env` file into your container:
+            ```
+            docker run -p 3000:3000 --env-file ./.env <tag>
+            ```
+
+            If using Docker compose:
+
+            ```yaml
+            version: "3.9"
+            services:
+              lowdefy:
+                build: .
+                ports:
+                  - "3000:3000"
+                env_file: ./.env # Path to env file
+            ```
+
+            ### Config files or plugins outside the config directory
+
+            For security reasons, only files inside the directory of the Dockerfile can be accessed by the Dockerfile during the build process.
+
+            Sometimes files outside of the config directory need to be accessed by the Lowdefy app during build - for example using the `_ref` operator on shared config files, or when using pnpm local workspace plugins. In this case, the Dockerfile needs to be moved to a directory that includes all the files that need to be accessed and the Dockerfile needs to be modified to take this into account.
+
+            ###### In pnpm monorepo with plugins
+
+            ```text
+            FROM node:18-buster AS builder
+
+            WORKDIR /lowdefy
+
+            COPY . .
+            # Configure standalone next build
+            ENV LOWDEFY_BUILD_OUTPUT_STANDALONE 1
+
+            # Enable pnpm using corepack
+            RUN corepack enable
+
+            # TODO: Change config-directory (./app) as appropriate here
+            RUN pnpx lowdefy@4 build --config-directory ./app --log-level=debug
+
+            RUN pnpm --filter=@lowdefy/server --prod deploy ./deploy
+
+            FROM node:18-alpine AS runner
+
+            ENV NODE_ENV production
+            ENV NEXT_TELEMETRY_DISABLED 1
+
+            WORKDIR /lowdefy
+
+            RUN addgroup --system --gid 1001 nodejs
+            RUN adduser --system --uid 1001 lowdefy
+
+            # TODO: Change from-directory (/lowdefy/app/.lowdefy/server/*) as appropriate here
+            COPY --from=builder --chown=lowdefy:nodejs /lowdefy/app/.lowdefy/server/public ./public
+            COPY --from=builder --chown=lowdefy:nodejs /lowdefy/app/.lowdefy/server/.next/standalone ./
+            COPY --from=builder --chown=lowdefy:nodejs /lowdefy/app/.lowdefy/server/.next/static ./.next/static
+
+            COPY --from=builder --chown=lowdefy:nodejs /lowdefy/deploy/node_modules ./node_modules
+
+            EXPOSE 3000
+
+            ENV PORT 3000
+
+            CMD ["node", "server.js"]
             ```

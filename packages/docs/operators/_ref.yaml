@@ -1,4 +1,4 @@
-# Copyright 2020-2021 Lowdefy, Inc
+# Copyright 2020-2024 Lowdefy, Inc
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ _ref:
       (path: string): any
       (arguments: {
         path?: string,
+        key?: string,
         resolver?: string,
         transformer?: string,
         vars?: object,
@@ -43,6 +44,8 @@ _ref:
 
       If the file is not parsed (for example has an extension like `.txt`, `.md`, or `.html`), the file contents are included in the configuration as a string.
 
+      If the referenced file is a YAML or JSON file, the `key` argument can be used to reference a specific key inside that file, instead of the whole file.
+
       ###### Variables
 
       Variables defined in the `vars` argument can be accessed in the referenced file using the [`_var`](/_var), and as template variables in Nunjucks files.
@@ -59,174 +62,235 @@ _ref:
 
       A transformer is a JavaScript function that receives the result of the `_ref` operator, and its `vars` as arguments. The value returned by this function will be included in the configuration as the final result of the `_ref` operator. The `transformer` argument should be the file path (relative to the root of the project) to a JavaScript file that exports a transformer function.
 
+      ###### CommonJS and ES Modules
+
+      Both [CommonJS](https://nodejs.org/api/modules.html) and [ES Modules](https://nodejs.org/api/esm.html) are supported for in resolver and transformer functions. By default the functions are imported as CommonJs modules, and the function should be exported as a default export (`module.exports = transformer`). Files can also use the `.cjs` file extension to indicate they are CommonJs modules.
+
+      To use ES Modules, either use files with `.mjs` file extension, or add a `package.json` in the project directory file with `"type": "module"` set. When using ES Modules, the functions should also be a default export (`export default transformer;`)
+
     arguments: |
       ###### string
       The file path to the referenced file, from the root of the project directory.
 
       ###### object
         - `path: string`:  The file path to the referenced file, from the root of the project directory. If no `resolver` is specified, `path` is required.
+        - `key: string`: Only include the content at the specified key, instead of the entire file content. Dot notation is supported. This can only be used with YAML or JSON files.
         - `resolver: string`: The file path to a JavaScript file, from the root of the project directory, that exports a resolver function.
         - `transformer: string`: The file path to a JavaScript file, from the root of the project directory, that exports a transformer function.
         - `vars: object`: An object to be used as variables for the `_var` operator in the referenced file, and as template variables in Nunjucks template files.
 
-    examples: |
-      ###### Reference pages:
-      ```yaml
-      # lowdefy.yaml
-      lowdefy: '3.23.2'
-      pages:
-        - _ref: pages/page1.yaml
-        - _ref: pages/page2.yaml
-      ```
-      ```yaml
-      # pages/page1.yaml
-      id: page1
-      type: PageHeaderMenu
-      blocks:
-        # ...
-      ```
-      ```yaml
-      # pages/page2.yaml
-      id: page2
-      type: PageHeaderMenu
-      blocks:
-        # ...
-      ```
-      Returns:
-      ```
-      lowdefy: '3.23.2'
-      pages:
-        - id: page1
+    examples:
+      _nunjucks:
+        on:
+          version:
+            _ref: version.yaml
+        template: |
+          ###### Reference pages:
+          ```yaml
+          # lowdefy.yaml
+          lowdefy: {{ version }}
+          pages:
+            - _ref: pages/page1.yaml
+            - _ref: pages/page2.yaml
+          ```
+          ```yaml
+          # pages/page1.yaml
+          id: page1
           type: PageHeaderMenu
           blocks:
             # ...
-        - id: page2
+          ```
+          ```yaml
+          # pages/page2.yaml
+          id: page2
           type: PageHeaderMenu
           blocks:
             # ...
-      ```
+          ```
+          Returns:
+          ```
+          lowdefy: {{ version }}
+          pages:
+            - id: page1
+              type: PageHeaderMenu
+              blocks:
+                # ...
+            - id: page2
+              type: PageHeaderMenu
+              blocks:
+                # ...
+          ```
 
-      ###### Using a standardized input label template:
-      ```yaml
-      blocks:
-        - id: name
-          type: TextInput
-          properties:
-            label:
-              _ref:
-                path: label.yaml
-                vars:
+          ###### Using a standardized input label template:
+          ```yaml
+          blocks:
+            - id: name
+              type: TextInput
+              properties:
+                label:
+                  _ref:
+                    path: label.yaml
+                    vars:
+                      title: Name
+                      description: Your name and surname.
+            - id: age
+              type: NumberInput
+              properties:
+                label:
+                  _ref:
+                    path: label.yaml
+                    vars:
+                      title: Age
+                      description: Your age.
+          ```
+          ```yaml
+          # label.yaml
+          title:
+            _var: title
+          extra:
+            _var: description
+          span: 8
+          colon: false
+          extraStyle:
+            color: '#546358'
+          ```
+          Returns:
+          ```yaml
+          blocks:
+            - id: name
+              type: TextInput
+              properties:
+                label:
                   title: Name
-                  description: Your name and surname.
-        - id: age
-          type: NumberInput
-          properties:
-            label:
-              _ref:
-                path: label.yaml
-                vars:
+                  extra: Your name and surname.
+                  span: 8
+                  colon: false
+                  extraStyle:
+                    color: '#546358'
+            - id: age
+              type: NumberInput
+              properties:
+                label:
                   title: Age
-                  description: Your age.
-      ```
-      ```yaml
-      # label.yaml
-      title:
-        _var: title
-      extra:
-        _var: description
-      span: 8
-      colon: false
-      extraStyle:
-        color: '#546358'
-      ```
-      Returns:
-      ```yaml
-      blocks:
-        - id: name
-          type: TextInput
-          properties:
-            label:
-              title: Name
-              extra: Your name and surname.
-              span: 8
-              colon: false
-              extraStyle:
-                color: '#546358'
-        - id: age
-          type: NumberInput
-          properties:
-            label:
-              title: Age
-              extra: Your age.
-              span: 8
-              colon: false
-              extraStyle:
-                color: '#546358'
-      ```
+                  extra: Your age.
+                  span: 8
+                  colon: false
+                  extraStyle:
+                    color: '#546358'
+          ```
 
-      ###### Local or shared resolver:
-
-      This resolver function will first look for the configuration file in the current working directory, but if the file is not found it will be read from an adjacent "shared" directory. This pattern can be used to build apps that mostly use a shared configuration, with a few components that are customised per app.
-
-      ```js
-      // resolvers/useLocalOrSharedConfig.js
-      const fs = require('fs')
-      const path = require('path')
-      const { promisify } = require('util');
-
-      const readFilePromise = promisify(fs.readFile);
-
-      async function useLocalOrSharedConfig(refPath, vars, context) {
-        let fileContent
-        try {
-          fileContent =  await readFilePromise(path.resolve(refPath), 'utf8');
-          return fileContent;
-        } catch (error) {
-          if (error.code === 'ENOENT') {
-            fileContent = readFilePromise(path.resolve('../shared', refPath), 'utf8');
-            return fileContent;
+          ###### Use key:
+          ```yaml
+          # lowdefy.yaml
+          lowdefy: {{ version }}
+          version:
+            _ref:
+              path: package.json
+              field: version
+          ```
+          ```json
+          // package.json
+          {
+            "version": "1.0.0"
           }
-          throw error;
-        }
+          ```
+          Returns:
+          ```
+          lowdefy: {{ version }}
+          version: 1.0.0
+          ```
+
+          ###### Local or shared resolver:
+
+          This resolver function will first look for the configuration file in the current working directory, but if the file is not found it will be read from an adjacent "shared" directory. This pattern can be used to build apps that mostly use a shared configuration, with a few components that are customised per app.
+
+          ```js
+          // resolvers/useLocalOrSharedConfig.js
+          const fs = require('fs');
+          const path = require('path');
+          const { promisify } = require('util');
+
+          const readFilePromise = promisify(fs.readFile);
+
+          async function useLocalOrSharedConfig(refPath, vars, context) {
+            let fileContent
+            try {
+              fileContent =  await readFilePromise(path.resolve(refPath), 'utf8');
+              return fileContent;
+            } catch (error) {
+              if (error.code === 'ENOENT') {
+                fileContent = readFilePromise(path.resolve('../shared', refPath), 'utf8');
+                return fileContent;
+              }
+              throw error;
+            }
 
 
-      }
+          }
 
-      module.exports = useLocalOrSharedConfig;
-      ```
+          module.exports = useLocalOrSharedConfig;
+          ```
 
-      ```yaml
-      // lowdefy.yaml
-      lowdefy: 3.23.2
+          ```yaml
+          // lowdefy.yaml
+          lowdefy: {{ version }}
 
-      cli:
-        refResolver: resolvers/useLocalOrSharedConfig.js
+          cli:
+            refResolver: resolvers/useLocalOrSharedConfig.js
 
-      pages:
-        - _ref: pages/local-page.yaml
-        - _ref: pages/shared-page.yaml
-      ```
+          pages:
+            - _ref: pages/local-page.yaml
+            - _ref: pages/shared-page.yaml
+          ```
 
-      ###### This transformer adds a standard footer to each page:
+          ###### This transformer adds a standard footer to each page:
 
-      ```js
-      //  transformers/addFooter.js
+          ```js
+          //  transformers/addFooter.js
 
-      function addFooter(page, vars) {
-        const footer = {
-          // ...
-        };
-        page.areas.footer = footer;
-        return page;
-      }
-      module.exports = addFooter;
-      ```
-      ```yaml
-      // lowdefy.yaml
-      lowdefy: 3.23.2
+          function addFooter(page, vars) {
+            const footer = {
+              // ...
+            };
+            page.areas.footer = footer;
+            return page;
+          }
+          module.exports = addFooter;
+          ```
+          ```yaml
+          // lowdefy.yaml
+          lowdefy: {{ version }}
 
-      pages:
-        - _ref:
-            path: pages/page1.yaml
-            transformer: transformers/addFooter.js
-      ```
+          pages:
+            - _ref:
+                path: pages/page1.yaml
+                transformer: transformers/addFooter.js
+          ```
+          ###### Using ES Modules with `.mjs` file extension:
+
+          ```js
+          // resolvers/useLocalOrSharedConfig.mjs
+          import fs from 'fs';
+          import path from 'path';
+          import { promisify } from 'util';
+
+          const readFilePromise = promisify(fs.readFile);
+
+          async function useLocalOrSharedConfig(refPath, vars, context) {
+            let fileContent
+            try {
+              fileContent =  await readFilePromise(path.resolve(refPath), 'utf8');
+              return fileContent;
+            } catch (error) {
+              if (error.code === 'ENOENT') {
+                fileContent = readFilePromise(path.resolve('../shared', refPath), 'utf8');
+                return fileContent;
+              }
+              throw error;
+            }
+
+
+          }
+
+          export default useLocalOrSharedConfig;
+          ```

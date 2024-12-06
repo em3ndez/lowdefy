@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -14,26 +14,50 @@
   limitations under the License.
 */
 
-import getDirectories from './getDirectories';
+import getDirectories from './getDirectories.js';
 
 test('default directories', () => {
-  const { cacheDirectory, outputDirectory } = getDirectories({
-    baseDirectory: '/test/base',
+  const directories = getDirectories({
+    configDirectory: '/test/config',
     options: {},
   });
 
-  expect(cacheDirectory).toEqual('/test/base/.lowdefy/.cache');
-  expect(outputDirectory).toEqual('/test/base/.lowdefy/build');
+  expect(directories).toEqual({
+    build: '/test/config/.lowdefy/server/build',
+    config: '/test/config',
+    dev: '/test/config/.lowdefy/dev',
+    server: '/test/config/.lowdefy/server',
+  });
 });
 
-test('specify outputDirectory in options', () => {
-  const { cacheDirectory, outputDirectory } = getDirectories({
-    baseDirectory: '/test/base',
+test('specify serverDirectory in options', () => {
+  const directories = getDirectories({
+    configDirectory: '/test/config',
     options: {
-      outputDirectory: '/test/build',
+      serverDirectory: '/test/server',
     },
   });
 
-  expect(cacheDirectory).toEqual('/test/base/.lowdefy/.cache');
-  expect(outputDirectory).toEqual('/test/build');
+  expect(directories).toEqual({
+    build: '/test/server/build',
+    config: '/test/config',
+    dev: '/test/config/.lowdefy/dev',
+    server: '/test/server',
+  });
+});
+
+test('specify devDirectory in options', () => {
+  const directories = getDirectories({
+    configDirectory: '/test/config',
+    options: {
+      devDirectory: '/test/dev',
+    },
+  });
+
+  expect(directories).toEqual({
+    build: '/test/config/.lowdefy/server/build',
+    config: '/test/config',
+    dev: '/test/dev',
+    server: '/test/config/.lowdefy/server',
+  });
 });

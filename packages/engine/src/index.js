@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -14,16 +14,15 @@
   limitations under the License.
 */
 
-import Actions from './Actions';
-import Events from './Events';
-import Blocks from './Blocks';
-import createLink from './createLink';
-import makeContextId from './makeContextId';
-import Requests from './Requests';
-import State from './State';
+import Actions from './Actions.js';
+import Events from './Events.js';
+import Blocks from './Blocks.js';
+import createLink from './createLink.js';
+import Requests from './Requests.js';
+import State from './State.js';
 
-import getContext from './getContext';
+import getContext from './getContext.js';
 
-export { Actions, Events, Blocks, createLink, makeContextId, Requests, State };
+export { Actions, Events, Blocks, createLink, Requests, State };
 
 export default getContext;

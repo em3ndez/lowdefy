@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -15,10 +15,7 @@
 */
 
 import axios from 'axios';
-import createPrint from './print';
-import packageJson from '../../package.json';
-
-const { version: cliVersion } = packageJson;
+import createPrint from './createPrint.js';
 
 async function logError({ error, context = {} }) {
   try {
@@ -26,11 +23,11 @@ async function logError({ error, context = {} }) {
       method: 'post',
       url: 'https://api.lowdefy.net/errors',
       headers: {
-        'User-Agent': `Lowdefy CLI v${cliVersion}`,
+        'User-Agent': `Lowdefy CLI v${context.cliVersion}`,
       },
       data: {
         source: 'cli',
-        cliVersion,
+        cliVersion: context.cliVersion,
         command: context.command,
         lowdefyVersion: context.lowdefyVersion,
         message: error.message,
@@ -38,13 +35,13 @@ async function logError({ error, context = {} }) {
         stack: error.stack,
       },
     });
-  } catch (error) {
+  } catch (_) {
     // pass
   }
 }
 
 async function errorHandler({ context, error }) {
-  const print = createPrint();
+  const print = createPrint({ logLevel: 'info' });
   print.error(error.message);
   if (!context.disableTelemetry) {
     await logError({ context, error });

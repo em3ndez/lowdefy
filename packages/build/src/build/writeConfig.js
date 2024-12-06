@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -13,12 +13,13 @@
   See the License for the specific language governing permissions and
   limitations under the License.
 */
+import { serializer } from '@lowdefy/helpers';
 
 async function writeConfig({ components, context }) {
-  await context.writeBuildArtifact({
-    filePath: 'config.json',
-    content: JSON.stringify(components.config || {}, null, 2),
-  });
+  await context.writeBuildArtifact(
+    'config.json',
+    serializer.serializeToString(components.config ?? {})
+  );
 }
 
 export default writeConfig;

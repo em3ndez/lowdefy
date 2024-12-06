@@ -1,5 +1,5 @@
 /*
-  Copyright 2020-2021 Lowdefy, Inc
+  Copyright 2020-2024 Lowdefy, Inc
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -16,43 +16,14 @@
 
 import { applyArrayIndices, serializer, type } from '@lowdefy/helpers';
 
-import commonOperators from './common';
-import webOperators from './web';
-
 class WebParser {
-  constructor({ context, contexts }) {
+  constructor({ context, operators }) {
     this.context = context;
-    this.contexts = contexts;
-    this.init = this.init.bind(this);
+    this.operators = operators;
     this.parse = this.parse.bind(this);
-    this.operators = {
-      ...commonOperators,
-      ...webOperators,
-    };
-    this.operations = {};
   }
 
-  async init() {
-    if (!type.isObject(this.context.lowdefy)) {
-      throw new Error('context.lowdefy must be an object.');
-    }
-    if (!type.isArray(this.context.operators)) {
-      throw new Error('context.operators must be an array.');
-    }
-    await Promise.all(
-      this.context.operators.map(async (operator) => {
-        if (this.operators[operator]) {
-          const fn = await import(`./${this.operators[operator]}.js`);
-          this.operations[operator] = fn.default;
-          if (this.operations[operator].init) {
-            await this.operations[operator].init();
-          }
-        }
-      })
-    );
-  }
-
-  parse({ actions, args, arrayIndices, event, input, location }) {
+  parse({ actions, args, arrayIndices, event, input, location, operatorPrefix = '_' }) {
     if (type.isUndefined(input)) {
       return { output: input, errors: [] };
     }
@@ -62,48 +33,58 @@ class WebParser {
     if (args && !type.isArray(args)) {
       throw new Error('Operator parser args must be an array.');
     }
-    if (location && !type.isString(location)) {
+    if (!type.isString(location)) {
       throw new Error('Operator parser location must be a string.');
     }
     const errors = [];
-    const { inputs, lowdefyGlobal, menus, urlQuery, user } = this.context.lowdefy;
+    const { basePath, home, inputs, lowdefyGlobal, menus, pageId, user, _internal } =
+      this.context._internal.lowdefy;
     const reviver = (_, value) => {
-      if (type.isObject(value) && Object.keys(value).length === 1) {
-        const key = Object.keys(value)[0];
-        const [op, methodName] = key.split('.');
-        try {
-          if (!type.isUndefined(this.operations[op])) {
-            const res = this.operations[op]({
-              eventLog: this.context.eventLog,
-              actions,
-              args,
-              arrayIndices,
-              context: this.context,
-              contexts: this.contexts,
-              env: 'web',
-              event,
-              input: inputs ? inputs[this.context.id] : {},
-              location: location ? applyArrayIndices(arrayIndices, location) : null,
-              lowdefyGlobal: lowdefyGlobal || {},
-              menus: menus || {},
-              methodName,
-              operations: this.operations,
-              params: value[key],
-              requests: this.context.requests,
-              state: this.context.state,
-              urlQuery: urlQuery || {},
-              user: user || {},
-              parser: this,
-            });
-            return res;
-          }
-        } catch (e) {
-          errors.push(e);
-          console.error(e);
-          return null;
-        }
+      if (!type.isObject(value)) return value;
+      // TODO: pass ~k in errors.
+      // const _k = value['~k'];
+      delete value['~k'];
+
+      if (Object.keys(value).length !== 1) return value;
+
+      const key = Object.keys(value)[0];
+      if (!key.startsWith(operatorPrefix)) return value;
+
+      const [op, methodName] = `_${key.substring(operatorPrefix.length)}`.split('.');
+      if (type.isUndefined(this.operators[op])) return value;
+
+      try {
+        const res = this.operators[op]({
+          actions,
+          args,
+          arrayIndices,
+          basePath,
+          event,
+          eventLog: this.context.eventLog,
+          globals: _internal.globals,
+          home,
+          input: inputs[this.context.id],
+          jsMap: this.context.jsMap,
+          location: applyArrayIndices(arrayIndices, location),
+          lowdefyGlobal,
+          menus,
+          methodName,
+          operatorPrefix,
+          operators: this.operators,
+          pageId,
+          params: value[key],
+          parser: this,
+          requests: this.context.requests,
+          runtime: 'browser',
+          state: this.context.state,
+          user,
+        });
+        return res;
+      } catch (e) {
+        errors.push(e);
+        console.error(e);
+        return null;
       }
-      return value;
     };
     return {
       output: serializer.copy(input, { reviver }),

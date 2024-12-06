@@ -1,4 +1,4 @@
-# Copyright 2020-2021 Lowdefy, Inc
+# Copyright 2020-2024 Lowdefy, Inc
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ _ref:
     block_type: Switch
     value_type: boolean
     category: input
-    schema: ../blocks/blocksAntd/src/blocks/Switch/Switch.json
+    schema: ../plugins/blocks/blocks-antd/src/blocks/Switch/schema.json
     filePath: blocks/input/Switch.yaml
     description_content: |
       The `Switch` block is an on/off input. It has a boolean value (true/false).

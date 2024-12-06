@@ -1,4 +1,4 @@
-# Copyright 2020-2021 Lowdefy, Inc
+# Copyright 2020-2024 Lowdefy, Inc
 
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,23 +20,15 @@
     marginRight: 8
   blocks:
     - id: docsearch
-      type: TextInput
+      type: DocSearch
       layout:
         flex: 0 1 auto
         align: middle
       properties:
-        label:
-          disabled: true
-        placeholder: Search
-    - id: docsearch_icon
-      type: Icon
-      layout:
-        flex: 0 1 auto
-        align: middle
-      style:
-        marginLeft: -22
-      properties:
-        name: SearchOutlined
+        appId: TTP0C3FN0L
+        indexName: lowdefy
+        apiKey:
+          _build.env: DOCSEARCH_API_KEY
 - id: why_button
   type: Button
   visible:
@@ -57,12 +49,7 @@
     title: Why Lowdefy
     type: text
     size: large
-  events:
-    onClick:
-      - id: website_link
-        type: Link
-        params:
-          url: https://lowdefy.com
+    href: https://lowdefy.com
 - id: tutorial_button
   type: Button
   visible:
@@ -106,12 +93,7 @@
     title: Join our Discord
     type: text
     size: large
-  events:
-    onClick:
-      - id: website_link
-        type: Link
-        params:
-          url: https://discord.gg/WmcJgXt
+    href: https://discord.gg/WmcJgXt
 - id: github_button
   type: Button
   visible:
@@ -128,11 +110,6 @@
   properties:
     title: Star on Github
     type: text
-    icon: GithubFilled
+    icon: AiFillGithub
     size: large
-  events:
-    onClick:
-      - id: website_link
-        type: Link
-        params:
-          url: https://github.com/lowdefy/lowdefy
+    href: https://github.com/lowdefy/lowdefy
